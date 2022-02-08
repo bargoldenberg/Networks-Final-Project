@@ -1,21 +1,29 @@
 # import socket
 from socket import *
-def init_connect(clientSocket,username):
-    clientSocket.send(username.encode())
-serverName = 'localhost'
-serverPort = 55002
-SERVER_ADDRESS = (serverName, serverPort)
+import time
+class Client:
 
-clientSocket = socket(AF_INET, SOCK_STREAM)
-clientSocket.connect(SERVER_ADDRESS)
+    def __init__(self):
+        serverName = 'localhost'
+        serverPort = 55000
+        self.SERVER_ADDRESS = (serverName, serverPort)
+        self.clientSocket = socket(AF_INET, SOCK_STREAM)
+        self.clientSocket.connect(self.SERVER_ADDRESS)
+        self.username = None
 
-username = input('Input Username:')
-init_connect(clientSocket,username)
-message = input('send message:')
-#modifiedSentence = clientSocket.recv(4096)
-clientSocket.send(message.encode())
-# print('From Server:', modifiedSentence.decode("UTF-8"))
-modifiedSentence = clientSocket.recv(4096)
-print('From Server:', modifiedSentence.decode())
+    def init_connect(self,username):
+        self.clientSocket.send(username.encode())
 
-clientSocket.close()
+    def send_message(self,message):
+        if self.username is None:
+            self.username = input('Input Username:')
+            self.init_connect(self.username)
+        time.sleep(0.1)
+        self.clientSocket.send(message.encode())
+
+    def receive_message(self):
+        message = self.clientSocket.recv(4096)
+        print('received message: '+message.decode())
+
+    def end_connection(self):
+        self.clientSocket.close()

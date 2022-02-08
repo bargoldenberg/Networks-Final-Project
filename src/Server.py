@@ -10,34 +10,29 @@ from User import *
         - when a client connects to the server he sends his name first that 
           gets appended to the connections dictionary including his connection socket.
 '''
-SERVER_ADDRESS = ('', 55002)
+SERVER_ADDRESS = ('', 55000)
 serverSocket = socket(AF_INET, SOCK_STREAM)
 connections = {}
-addresses = []
+addresses = {}
 serverSocket.bind(SERVER_ADDRESS)
 serverSocket.listen(5)
 print("The server is ready to receive clients")
 while True:
     connectionSocket, addrClient = serverSocket.accept()
+    print('got somthing!')
     # First connection.
-    if addrClient not in addresses:
-        addresses.append(addrClient)
+    if addrClient[0] not in connections.keys():
+        print(addrClient)
         user = User()
         user.set_user(connectionSocket.recv(4096).decode(), addrClient)
-        connections[connectionSocket] = user
+        connections[addrClient[0]] = user
+        addresses[user]=addrClient
         print(user.username)
     # Find to whom the message is for and send
-    else:
-        sentence = connectionSocket.recv(4096).decode()
-        connected_user = connections[connectionSocket].connected_user
-        keys = connections.keys()
-        sendsock = None
-        for key in keys:
-            if connections[key] == connected_user:
-                sendsock = key
-        if sendsock is None:
-            print("No such user")
-        print("Get from client ", addrClient, ":", sentence)
-        sendsock.send(bytes(sentence.encode()))
-        # connectionSocket.send(capitalizedSentence).encode()
-        connectionSocket.close()
+    sentence = connectionSocket.recv(4096).decode()
+    print(sentence)
+    connected_user = connections[addrClient[0]].connected_user
+    sentencefrom = connected_user.username+':'
+    connectionSocket.sendto(bytes(sentencefrom.encode()), addresses[connected_user])
+    connectionSocket.sendto(bytes(sentence.encode()),addresses[connected_user])
+    connectionSocket.close()
