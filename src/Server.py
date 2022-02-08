@@ -17,6 +17,7 @@ addresses = {}
 serverSocket.bind(SERVER_ADDRESS)
 serverSocket.listen(5)
 print("The server is ready to receive clients")
+
 while True:
     connectionSocket, addrClient = serverSocket.accept()
     print('got somthing!')
@@ -29,10 +30,12 @@ while True:
         addresses[user]=addrClient
         print(user.username)
     # Find to whom the message is for and send
+    connectionSocket.settimeout(1)
     sentence = connectionSocket.recv(4096).decode()
     print(sentence)
     connected_user = connections[addrClient[0]].connected_user
     sentencefrom = connected_user.username+':'
+    print(sentencefrom+sentence)
     connectionSocket.sendto(bytes(sentencefrom.encode()), addresses[connected_user])
     connectionSocket.sendto(bytes(sentence.encode()),addresses[connected_user])
     connectionSocket.close()
