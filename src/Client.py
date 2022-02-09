@@ -4,10 +4,9 @@ import time
 
 
 class Client:
-
     def __init__(self):
         serverName = 'localhost'
-        serverPort = 55000
+        serverPort = 55001
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
         self.clientSocket.connect(self.SERVER_ADDRESS)
@@ -20,13 +19,12 @@ class Client:
         if self.username is None:
             self.username = input('Input Username:')
             self.init_connect(self.username)
-        time.sleep(0.1)
-        try:
-            self.clientSocket.send(message.encode())
-        except:
-            self.clientSocket = socket(AF_INET, SOCK_STREAM)
-            self.clientSocket.connect(self.SERVER_ADDRESS)
-            self.clientSocket.send(message.encode())
+        time.sleep(0.5)
+        self.clientSocket.settimeout(0.2)
+        self.clientSocket = socket(AF_INET, SOCK_STREAM)
+        self.clientSocket.connect(self.SERVER_ADDRESS)
+        self.clientSocket.send(message.encode())
+
     def receive_message(self):
         message = self.clientSocket.recv(4096)
         if message.decode() != '':

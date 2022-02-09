@@ -10,7 +10,7 @@ from User import *
         - when a client connects to the server he sends his name first that 
           gets appended to the connections dictionary including his connection socket.
 '''
-SERVER_ADDRESS = ('', 55000)
+SERVER_ADDRESS = ('', 55001)
 serverSocket = socket(AF_INET, SOCK_STREAM)
 connections = {}
 addresses = {}
@@ -30,12 +30,10 @@ while True:
         addresses[user]=addrClient
         print(user.username)
     # Find to whom the message is for and send
-    connectionSocket.settimeout(1)
     sentence = connectionSocket.recv(4096).decode()
-    print(sentence)
+    print('the sentence is'+sentence)
     connected_user = connections[addrClient[0]].connected_user
-    sentencefrom = connected_user.username+':'
+    sentencefrom = connected_user.username+': '
     print(sentencefrom+sentence)
-    connectionSocket.sendto(bytes(sentencefrom.encode()), addresses[connected_user])
-    connectionSocket.sendto(bytes(sentence.encode()),addresses[connected_user])
+    connectionSocket.sendto(bytes(sentencefrom.encode()+sentence.encode()), addresses[connected_user])
     connectionSocket.close()
