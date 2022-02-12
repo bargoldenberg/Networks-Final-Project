@@ -5,14 +5,14 @@ class User:
     def __init__(self):
         self.username = ''
         self.address = ''
-        self.connected_user = self
+        self.connected_user = None
 
     def set_user(self, username, address):
         self.username = username
         self.address = address
 
-    def connect(self, user):
-        self.connected_user = user
+    def connect(self, socket):
+        self.connected_user = socket
 
     def __repr__(self):
         return f"UserName = {self.username}"

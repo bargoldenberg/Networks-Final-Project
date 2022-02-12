@@ -7,7 +7,7 @@ class Client:
     def __init__(self):
         print('hi')
         serverName = 'localhost'
-        serverPort = 55008
+        serverPort = 55009
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
         self.clientSocket.connect(self.SERVER_ADDRESS)
