@@ -7,7 +7,7 @@ class Client:
     def __init__(self):
         print('hi')
         serverName = 'localhost'
-        serverPort = 55016
+        serverPort = 55017
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
         self.clientSocket.connect(self.SERVER_ADDRESS)
@@ -22,9 +22,6 @@ class Client:
             self.username = input('Input Username:')
             self.init_connect(self.username)
         time.sleep(0.5)
-        #self.clientSocket.settimeout(0.2)
-        #self.clientSocket = socket(AF_INET, SOCK_STREAM)
-        #self.clientSocket.connect(self.SERVER_ADDRESS)
         self.clientSocket.send(message.encode())
 
     def receive_message(self):

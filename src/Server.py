@@ -17,48 +17,53 @@ from User import *
           Each client is a thread in the server (we used threadpools)
           
 '''
-SERVER_ADDRESS = ('', 55016)
-serverSocket = socket(AF_INET, SOCK_STREAM)
-connections = {}
-sock ={}
-serverSocket.bind(SERVER_ADDRESS)
-serverSocket.listen(5)
-print("The server is ready to receive clients")
+class Server():
+    def __init__(self):
+        self.SERVER_ADDRESS = ('', 55017)
+        self.serverSocket = socket(AF_INET, SOCK_STREAM)
+        self.connections = {}
+        self.sock = {}
+        self.serverSocket.bind(self.SERVER_ADDRESS)
+        self.serverSocket.listen(5)
+        print("The server is ready to receive clients")
 
-def run():
-    connection_socket, addr_client = serverSocket.accept()
-    while True:
-        if addr_client not in connections.keys():
-            print(addr_client)
-            user = User()
-            user.set_user(connection_socket.recv(4096).decode(), addr_client)
-            connections[addr_client] = user
-            sock[user] = connection_socket
-            user.connected_user = connection_socket
-            print(user.username)
-        # Find to whom the message is for and send
-        sentence = connection_socket.recv(4096).decode()
-        print('the sentence is ' + sentence)
-        if sentence == '<get_users>':
-            connection_socket.send(bytes(str(connections).encode()))
-
-        elif sentence[:9] == '<connect_' and sentence[len(sentence)-1:len(sentence)] == '>':
-            for connection in connections.values():
+    def connect(self,sentence,connection_socket,addr_client):
+        if sentence[:9] == '<connect_' and sentence[len(sentence) - 1:len(sentence)] == '>':
+            for connection in self.connections.values():
                 print(connection)
                 print(sentence[len(sentence) - 1:len(sentence)])
                 print(sentence[9:len(sentence)])
-                if connection.username == sentence[9:len(sentence)-1]:
-                    connections[addr_client].connected_user = sock[connection]
+                if connection.username == sentence[9:len(sentence) - 1]:
+                    self.connections[addr_client].connected_user = self.sock[connection]
                     connection.connected_user = connection_socket
             connection_socket.send(bytes('connected!'.encode()))
-        else:
-            sentencefrom = connections[addr_client].username + ': '
-            print(sentencefrom + sentence)
-            connection_socket.send(bytes('Sent!\n'.encode()))
-            connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
 
+    def run(self):
+        connection_socket, addr_client = self.serverSocket.accept()
+        while True:
+            if addr_client not in self.connections.keys():
+                print(addr_client)
+                user = User()
+                user.set_user(connection_socket.recv(4096).decode(), addr_client)
+                self.connections[addr_client] = user
+                self.sock[user] = connection_socket
+                user.connected_user = connection_socket
+                print(user.username)
+            # Find to whom the message is for and send
+            sentence = connection_socket.recv(4096).decode()
+            print('the sentence is ' + sentence)
+            self.connect(sentence, connection_socket, addr_client)
+            if sentence == '<get_users>':
+                connection_socket.send(bytes(str(self.connections).encode()))
+            else:
+                sentencefrom = self.connections[addr_client].username + ': '
+                print(sentencefrom + sentence)
+                connection_socket.send(bytes('Sent!\n'.encode()))
+                self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
 
 
 # ThreadPool run 5 threads
-with concurrent.futures.ThreadPoolExecutor() as executor:
-    clients = [executor.submit(run) for _ in range(5)]
+if __name__ == '__main__':
+    server = Server()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        clients = [executor.submit(server.run) for _ in range(5)]
