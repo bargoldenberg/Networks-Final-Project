@@ -5,14 +5,12 @@ import time
 
 class Client:
     def __init__(self):
-        print('hi')
         serverName = 'localhost'
         serverPort = 55017
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
         self.clientSocket.connect(self.SERVER_ADDRESS)
         self.username = None
-        print('hi2')
 
     def init_connect(self, username):
         self.clientSocket.send(username.encode())

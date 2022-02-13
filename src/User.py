@@ -21,6 +21,7 @@ def receive_message(client):
     while True:
         client.receive_message()
 def send_message(client):
+    client.send_message('connected')
     while True:
         message = input()
         if message == '<end_connection>':

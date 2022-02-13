@@ -37,7 +37,15 @@ class Server():
                     self.connections[addr_client].connected_user = self.sock[connection]
                     connection.connected_user = connection_socket
             connection_socket.send(bytes('connected!'.encode()))
-
+    def msg_all(self,sentence,connection_socket,addr_client):
+        FLAG = True
+        if sentence[:9] == '<msg_all>':
+            FLAG = False
+            for socket in self.sock.values():
+                if socket != connection_socket:
+                    sentencefrom = self.connections[addr_client].username + ': '
+                    socket.send(bytes((sentencefrom+sentence[9:]).encode()))
+        return FLAG
     def run(self):
         connection_socket, addr_client = self.serverSocket.accept()
         while True:
@@ -53,13 +61,15 @@ class Server():
             sentence = connection_socket.recv(4096).decode()
             print('the sentence is ' + sentence)
             self.connect(sentence, connection_socket, addr_client)
+            FLAG = self.msg_all(sentence,connection_socket,addr_client)
             if sentence == '<get_users>':
                 connection_socket.send(bytes(str(self.connections).encode()))
             else:
-                sentencefrom = self.connections[addr_client].username + ': '
-                print(sentencefrom + sentence)
-                connection_socket.send(bytes('Sent!\n'.encode()))
-                self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
+                if FLAG:
+                    sentencefrom = self.connections[addr_client].username + ': '
+                    print(sentencefrom + sentence)
+                    connection_socket.send(bytes('Sent!\n'.encode()))
+                    self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
 
 
 # ThreadPool run 5 threads
