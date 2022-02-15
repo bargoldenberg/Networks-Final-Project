@@ -5,7 +5,7 @@ import time
 
 class Client:
     def __init__(self):
-        serverName = 'localhost'
+        serverName = '192.168.14.17'
         serverPort = 55017
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)

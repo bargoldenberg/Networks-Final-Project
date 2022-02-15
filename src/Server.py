@@ -19,7 +19,7 @@ from User import *
 '''
 class Server():
     def __init__(self):
-        self.SERVER_ADDRESS = ('', 55017)
+        self.SERVER_ADDRESS = ('192.168.14.17', 55017)
         self.serverSocket = socket(AF_INET, SOCK_STREAM)
         self.connections = {}
         self.sock = {}
