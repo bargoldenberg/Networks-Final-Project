@@ -20,8 +20,8 @@ import threading
 '''
 class Server():
     def __init__(self):
-        self.SERVER_ADDRESS = ('192.168.14.189', 55006)
-        self.SERVER_ADDRESS_UDP = ('192.168.14.189', 55007)
+        self.SERVER_ADDRESS = ('10.9.4.127', 55002)
+        self.SERVER_ADDRESS_UDP = ('10.9.4.127', 55003)
         self.serverSocket = socket(AF_INET, SOCK_STREAM)
         self.serverSocket_udp = socket(AF_INET,SOCK_DGRAM)
         self.connections = {}
@@ -99,7 +99,7 @@ class Server():
 
         result = (~ sum) & 0xffff  # Keep lower 16 bits
         result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
-        return chr(result / 256) + chr(result % 256)
+        return chr(int(result / 256)) + chr(result % 256)
 
     def segment(self,data,size):
         packets = []
@@ -116,9 +116,7 @@ class Server():
 
     def run_udp(self):
         while True:
-            print('1')
             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-            print('2')
             file = open('/home/bar/PycharmProjects/Networks-Final-Project/Data/File.txt','r')
             data = file.read()
             packets = self.segment(data,len(data))

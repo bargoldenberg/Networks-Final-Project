@@ -5,9 +5,9 @@ import time
 
 class Client:
     def __init__(self):
-        serverName = '192.168.14.189'
-        serverPort = 55006
-        udpserverport = 55007
+        serverName = '10.9.4.127'
+        serverPort = 55002
+        udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName,udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -42,30 +42,36 @@ class Client:
     def send_message(self, message):
         if message == 'File.txt':
             File = open('recvFile.txt', 'w')
-            print('one')
             self.udpclientsocket.sendto('gimmie a file'.encode(),self.UDP_SERVER_ADRESS)
-            print('two')
+            self.udpclientsocket.settimeout(1)
             while True:
-                data = self.udpclientsocket.recv(4096).decode()
-                print(data)
-                header = data.split(';')
-                seq = header[0]
-                checksum = header[1]
-                payload = ''
-                i=2
-                while i < len(header):
-                    if len(header) == 3 or i == len(header)-1:
-                        payload += header[i]
-                        i+=1
-                    else:
-                        payload +=header[i]+';'
-                        i+=1
-                print(payload)
-                # if checksum!=self.checksum(payload):
-                #     self.udpclientsocket.sendto(('NAK'+str(seq)).encode(),self.UDP_SERVER_ADRESS)
-                # else:
-                #     self.udpclientsocket.sendto(('ACK'+str(seq)).encode(), self.UDP_SERVER_ADRESS)
-                File.write(payload)
+                try:
+                    data = self.udpclientsocket.recv(4096).decode()
+                    #print(data)
+                    header = data.split(';')
+                    #print(header)
+                    seq = header[0]
+                    checksum = header[1]
+                    payload = ''
+                    i=2
+                    while i < len(header):
+                        if len(header) == 3 or i == len(header)-1:
+                            payload += header[i]
+                            i+=1
+                        else:
+                            payload +=header[i]+';'
+                            i+=1
+                    print(payload)
+                    # if checksum!=self.checksum(payload):
+                    #     self.udpclientsocket.sendto(('NAK'+str(seq)).encode(),self.UDP_SERVER_ADRESS)
+                    # else:
+                    #     self.udpclientsocket.sendto(('ACK'+str(seq)).encode(), self.UDP_SERVER_ADRESS)
+                    print('1')
+                    File.write(payload)
+                    print('2')
+                except:
+                    File.close()
+                    break
             return
         if self.username is None:
             self.username = input('Input Username:')
