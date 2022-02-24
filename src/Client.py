@@ -5,9 +5,9 @@ import time
 
 class Client:
     def __init__(self):
-        serverName = '10.9.4.127'
-        serverPort = 55002
-        udpserverport = 55003
+        serverName = '127.0.0.1'
+        serverPort = 1234
+        udpserverport = 1235
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName,udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -73,16 +73,20 @@ class Client:
                     File.close()
                     break
             return
-        if self.username is None:
-            self.username = input('Input Username:')
-            self.init_connect(self.username)
+        # if self.username is None:
+        #     self.username = input('Input Username:')
+        #     self.init_connect(self.username)
         time.sleep(0.5)
         self.clientSocket.send(message.encode())
 
     def receive_message(self):
-        message = self.clientSocket.recv(4096)
-        if message.decode() != '':
-            print(message.decode())
+        self.clientSocket.settimeout(0.2)
+        try:
+            message = self.clientSocket.recv(4096)
+            if message.decode() != '':
+                return message.decode()
+        except:
+            return
 
     def end_connection(self):
         self.clientSocket.close()

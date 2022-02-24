@@ -1,8 +1,10 @@
 # import socket
 from socket import *
-import concurrent.futures
-from User import *
+from concurrent.futures import *
+from src.User import *
 from scapy import all
+
+
 import threading
 '''
     Left to do:
@@ -19,9 +21,10 @@ import threading
           
 '''
 class Server():
-    def __init__(self):
-        self.SERVER_ADDRESS = ('10.9.4.127', 55002)
-        self.SERVER_ADDRESS_UDP = ('10.9.4.127', 55003)
+    def __init__(self,addr,tcp_port,udp_port):
+        self.SERVER_ADDRESS = (addr, tcp_port)
+        print(addr)
+        self.SERVER_ADDRESS_UDP = (addr, udp_port)
         self.serverSocket = socket(AF_INET, SOCK_STREAM)
         self.serverSocket_udp = socket(AF_INET,SOCK_DGRAM)
         self.connections = {}
@@ -72,7 +75,7 @@ class Server():
                 if FLAG:
                     sentencefrom = self.connections[addr_client].username + ': '
                     print(sentencefrom + sentence)
-                    connection_socket.send(bytes('Sent!\n'.encode()))
+                    #connection_socket.send(bytes('Sent!\n'.encode()))
                     self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
 
     def create_pkt(self,data,SEGMENTSIZE,offset,size):
@@ -124,16 +127,18 @@ class Server():
             for packet in packets:
                 self.serverSocket_udp.sendto(packet.encode(),clientaddress)
             print(data)
-    def listen(self):
-        while True:
-            print(self.serverSocket_udp.recv(4096).decode())
 
 # ThreadPool run 5 threads
-if __name__ == '__main__':
-    server = Server()
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        clients = [executor.submit(server.run) for _ in range(5)]
-        udp_clients = [executor.submit(server.run_udp) for _ in range(5)]
-    # t = threading.Thread(target = server.listen,args =[])
-    # t.start
-    # t.join
+    def run_server(self,addr,tcpport,udport):
+        server = Server(addr,tcpport,udport)
+        clients = []
+        udp_clients = []
+        for _ in range(5):
+            t = threading.Thread(target=server.run,args = [])
+            t1 = threading.Thread(target = server.run_udp,args = [])
+            clients.append(t)
+            udp_clients.append(t1)
+        for thread in clients:
+            thread.start()
+        for thread in udp_clients:
+            thread.start()

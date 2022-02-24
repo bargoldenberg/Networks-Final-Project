@@ -1,4 +1,4 @@
-from Client import *
+
 import threading
 
 class User:
@@ -17,25 +17,49 @@ class User:
     def __repr__(self):
         return f"UserName = {self.username}"
 
-def receive_message(client):
-    while True:
-        client.receive_message()
-def send_message(client):
-    client.send_message('connected')
-    while True:
-        message = input()
+    def start_connection(self,client,username):
+
+        client.send_message(username)
+        client.send_message('connected')
+
+    def receive_message(self,client,update_message):
+        while True:
+            message = client.receive_message()
+            if message is None:
+                continue
+            else:
+                breakdown = message.split(':')
+                name = breakdown[0]
+                if len(breakdown)>1:
+                    msg = breakdown[1]
+                    update_message(name,msg)
+                else:
+                    update_message(name,'')
+
+    def send_username(self,client,username):
+        self.start_connection(client,username)
+        # while True:
+        #     message = input()
+        #     if message == '<end_connection>':
+        #         break
+        #     client.send_message(message)
+        # client.end_connection()
+    def send_message(self,client,message):
         if message == '<end_connection>':
-            break
+            client.end_connection()
         client.send_message(message)
-    client.end_connection()
 
 
-if __name__ == '__main__':
-    client = Client()
-    t1 = threading.Thread(target=receive_message,args=[client])
-    t2 = threading.Thread(target=send_message,args=[client])
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
 
+    def run(self,username,client):
+        #t1 = threading.Thread(target=self.receive_message,args=[client,None])
+        t2 = threading.Thread(target=self.send_username,args=[client,username])
+        #t1.start()
+        t2.start()
+        # t1.join()
+        # t1.join()
+        pass
+    def listen(self,client,update_message):
+        t = threading.Thread(target = self.receive_message,args = [client,update_message])
+        t.start()
+        t.join
