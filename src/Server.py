@@ -185,14 +185,17 @@ class Server():
                 w_start += 1
                 w_end = w_start + window_size
                 print("w_start: ",w_start,"w_end: ",w_end)
-                self.serverSocket_udp.settimeout(1)
+                #self.serverSocket_udp.settimeout(1)
         print("Server: Sending Finished.")
     '''
     Test Functions For Sappir's Implementation
     '''
+
     def run_udp_Final(self):
         window_size = 4
         while True:
+            x =0
+            print('hi')
             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
             print("messege:",message.decode())
             if self.message_type(message.decode()) == 1:
@@ -214,18 +217,24 @@ class Server():
                     # Sending the packets size
                     self.serverSocket_udp.sendto((str(len(packets))).encode(),clientaddress)
                     while w_start < len(packets):
+                        print('hi2')
                         print("w_start:", w_start , ', Length Packets:',len(packets))
                         for i in range(0, window_size):
                             curr = i + w_start
                             if curr not in sent and curr < len(packets):
                                 sent.append(curr)
+                                print('Length before pickle',len(packets[curr][1]))
+                                print('payload seq: ',packets[curr][0],'payload: ',packets[curr][1])
                                 toSend = pickle.dumps(packets[curr])
+                                print(len(toSend))
                                 self.serverSocket_udp.sendto(toSend, clientaddress)
                                 print("Server: Packet ", curr, " Sent")
                                 tmp = 'ACK'
                                 tmp += str(curr)
                                 expected_acks.append(tmp)
                         # self.serverSocket_udp.settimeout(5)
+                        print('hello')
+                        x=1
                         message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                         print('Message: ',message.decode())
                         if self.message_type(message.decode()) == 1:
@@ -236,7 +245,7 @@ class Server():
                             print("Ack received: ",self.ack_received)
                             toSend = pickle.dumps(packets[w_start])
                             self.serverSocket_udp.sendto(toSend, clientaddress)
-                            self.serverSocket_udp.settimeout(2)
+                            #self.serverSocket_udp.settimeout(2)
                             if self.message_type(message.decode()) == 1:
                                 self.ack_received.append(message.decode())
                         '''
@@ -272,7 +281,7 @@ class Server():
         return missimg
     def receive_Acks(self):
         time.sleep(2)
-        self.serverSocket_udp.settimeout(7)
+        #self.serverSocket_udp.settimeout(7)
         try:
             print("Thread:I'm Trying")
             # self.serverSocket_udp.bind()
@@ -306,7 +315,7 @@ class Server():
         server = Server(addr,tcpport,udport)
         clients = []
         udp_clients = []
-        for _ in range(5):
+        for _ in range(1):
             t = threading.Thread(target=server.run,args = [])
             t1 = threading.Thread(target = server.run_udp_Final,args = [])
             clients.append(t)

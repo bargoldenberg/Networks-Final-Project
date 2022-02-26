@@ -8,8 +8,8 @@ import pickle
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 55002
-        udpserverport = 55003
+        serverPort = 55001
+        udpserverport = 55002
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -65,15 +65,20 @@ class Client:
                         print("Client: Packet = ", packet)
                         seq = packet[0]
                         payload = packet[1]
+                        print('Length after pickle',len(payload))
+                        print('payload seq: ',seq,'payload: ',payload)
                         print("Client: Packet (seq num: ", seq, ") received, sending ACK ")
                         all_data[seq] = payload
                         self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
                     except:
                         File.close()
                         break
-                    for byt in all_data.values():
-                        File.write(byt)
+                for pckt in all_data.values():
+                    File.write(pckt)
+                    # for byt in all_data.values():
+                    #     File.write(byt)
                 print("Finished: ", all_data)
+                File.close()
                 return
         time.sleep(0.5)
         self.clientSocket.send(message.encode())
@@ -90,7 +95,7 @@ class Client:
             return 0
 
     def receive_message(self):
-        self.clientSocket.settimeout(0.2)
+        #self.clientSocket.settimeout(0.2)
         try:
             message = self.clientSocket.recv(4096)
             if message.decode() != '':
