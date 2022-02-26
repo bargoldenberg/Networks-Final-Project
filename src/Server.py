@@ -1,11 +1,17 @@
 # import socket
+import math
+import os
+import time
 from socket import *
-from concurrent.futures import *
+import concurrent.futures
+# from tkinter import Image
+from PIL import Image
 from src.User import *
 from scapy import all
-
-
 import threading
+import pickle
+
+
 '''
     Left to do:
         - Send message to all users.
@@ -20,20 +26,20 @@ import threading
           Each client is a thread in the server (we used threadpools)
           
 '''
+
 class Server():
     def __init__(self,addr,tcp_port,udp_port):
         self.SERVER_ADDRESS = (addr, tcp_port)
-        print(addr)
         self.SERVER_ADDRESS_UDP = (addr, udp_port)
         self.serverSocket = socket(AF_INET, SOCK_STREAM)
         self.serverSocket_udp = socket(AF_INET,SOCK_DGRAM)
+        self.ack_received = []
         self.connections = {}
         self.sock = {}
         self.serverSocket.bind(self.SERVER_ADDRESS)
         self.serverSocket_udp.bind(self.SERVER_ADDRESS_UDP)
         self.serverSocket.listen(5)
         print("The server is ready to receive clients")
-
     def connect(self,sentence,connection_socket,addr_client):
         if sentence[:9] == '<connect_' and sentence[len(sentence) - 1:len(sentence)] == '>':
             for connection in self.connections.values():
@@ -57,7 +63,7 @@ class Server():
         connection_socket, addr_client = self.serverSocket.accept()
         while True:
             if addr_client not in self.connections.keys():
-                print(addr_client)
+                print("Client Address: ",addr_client)
                 user = User()
                 user.set_user(connection_socket.recv(4096).decode(), addr_client)
                 self.connections[addr_client] = user
@@ -77,14 +83,18 @@ class Server():
                     print(sentencefrom + sentence)
                     #connection_socket.send(bytes('Sent!\n'.encode()))
                     self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
-
-    def create_pkt(self,data,SEGMENTSIZE,offset,size):
+    '''
+    The Next five functions are Helpers for the selective repeat UDP.
+    '''
+    # cut our data to small packets -  each run it starts from offset to offset +  SEGMENTSIZE
+    def create_pkt(self,data:bytes,SEGMENTSIZE,offset,size):
         if SEGMENTSIZE+offset>size:
             return data[offset:]
         else:
             return data[offset:offset+SEGMENTSIZE]
-
+    # Basic CheckSum for payload
     def checksum(self,data):
+        data = str(data)
         pos = len(data)
         if (pos & 1):  # If odd...
             pos -= 1
@@ -103,30 +113,193 @@ class Server():
         result = (~ sum) & 0xffff  # Keep lower 16 bits
         result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
         return chr(int(result / 256)) + chr(result % 256)
-
-    def segment(self,data,size):
-        packets = []
-        SEGMENTSIZE = 5
-        OFFSET=0
+    def segment(self,data:bytes,size):
+        packets = [] # List that contain all the packets.
+        SEGMENTSIZE = 507   # Will Be Changes.
+        OFFSET = 0
         seq = 0
         while OFFSET<=size:
             payload = self.create_pkt(data, SEGMENTSIZE, OFFSET, size)
+            print('Payload Format: ', type(payload))
             check_sum = self.checksum(payload)
             packets.append(f'{seq};{check_sum};{payload}')
             seq+=1
             OFFSET+=SEGMENTSIZE
         return packets
-
+    def segment_bytes(self,data:bytes,size):
+        print("Segment values:")
+        packets = [] # List that contain all the packets.
+        SEGMENTSIZE = 507   # Will Be Changes.
+        OFFSET = 0
+        seq = 0
+        while OFFSET<=size:
+            buffer = [] ### ----> for making a bytes list
+            payload = self.create_pkt(data, SEGMENTSIZE, OFFSET, size)
+            print('Payload Format: ', type(payload))
+            # check_sum = self.checksum(payload).encode()
+            # print('CheckSum Format: ', type(check_sum))
+            # print('Seq: ',seq,', Byte seq: ',seq.to_bytes())
+            buffer.append(seq)
+            # buffer[1]= self.checksum(payload).encode()
+            buffer.append(payload)
+            packets.append(buffer)
+            seq+=1
+            OFFSET+=SEGMENTSIZE
+        return packets
     def run_udp(self):
+        window_size = 4
         while True:
             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-            file = open('/home/bar/PycharmProjects/Networks-Final-Project/Data/File.txt','r')
+            print("Message received: ",message)
+            w_start = 0
+            sent = []
+            expected_acks = []
+            file = open(rb"C:\Users\sappi\PycharmProjects\Networks-Final-Project\Data\File.txt")
             data = file.read()
             packets = self.segment(data,len(data))
-            print(packets)
-            for packet in packets:
-                self.serverSocket_udp.sendto(packet.encode(),clientaddress)
-            print(data)
+            self.serverSocket_udp.sendto((str(len(packets))).encode(), clientaddress) ### Sending the packets size
+            print("Server: Data split to packets bro")
+            w_end = w_start+window_size
+            x = threading.Thread(target=self.receive_Acks(), args=())
+            x.start()
+            print("Server: Thread is running bro")
+            print("Server: Main Loop.")
+            while w_end < len(packets):
+                print("Server: Thread is running bro")
+                expected_acks.clear()
+                print("w_start:" , w_start)
+                for i in range(0,4):
+                    # print("w_start:"+w_start)
+                    curr = i+w_start
+                    if curr not in sent:
+                        sent.append(curr)
+                        self.serverSocket_udp.sendto(packets[curr].encode(),clientaddress)
+                        print("Server: Packet ",curr," Sent")
+                        # seq = i + w_start
+                        # tmp = 'ACK'
+                        # tmp += str(curr)
+                        expected_acks.append(f'ACK {str(curr)}')
+                '''
+                Ack's Returned Goes Here.
+                '''
+                w_start += 1
+                w_end = w_start + window_size
+                print("w_start: ",w_start,"w_end: ",w_end)
+                self.serverSocket_udp.settimeout(1)
+        print("Server: Sending Finished.")
+    '''
+    Test Functions For Sappir's Implementation
+    '''
+    def run_udp_Final(self):
+        window_size = 4
+        while True:
+            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+            print("messege:",message.decode())
+            if self.message_type(message.decode()) == 1:
+                self.ack_received.append(message.decode())
+            elif self.message_type(message.decode()) == 0:
+                path = "../Data/"
+                path += str(message.decode())
+                print('Path = ',path)
+                if os.path.exists(path) == True:
+                    print("File Name: ",message.decode())
+                    w_start = 0
+                    sent = []
+                    expected_acks = []
+                    file = open(path, 'rb')
+                    data = file.read()
+                    print('Data = ',data)
+                    packets = self.segment_bytes(data, len(data))
+                    print("Server: Data split to packets:  -->", packets)
+                    # Sending the packets size
+                    self.serverSocket_udp.sendto((str(len(packets))).encode(),clientaddress)
+                    while w_start < len(packets):
+                        print("w_start:", w_start , ', Length Packets:',len(packets))
+                        for i in range(0, window_size):
+                            curr = i + w_start
+                            if curr not in sent and curr < len(packets):
+                                sent.append(curr)
+                                toSend = pickle.dumps(packets[curr])
+                                self.serverSocket_udp.sendto(toSend, clientaddress)
+                                print("Server: Packet ", curr, " Sent")
+                                tmp = 'ACK'
+                                tmp += str(curr)
+                                expected_acks.append(tmp)
+                        # self.serverSocket_udp.settimeout(5)
+                        message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+                        print('Message: ',message.decode())
+                        if self.message_type(message.decode()) == 1:
+                            self.ack_received.append(message.decode())
+                            print("Ack: ", message.decode())
+                        # todo: Add timeout for while
+                        while expected_acks[w_start] not in self.ack_received:
+                            print("Ack received: ",self.ack_received)
+                            toSend = pickle.dumps(packets[w_start])
+                            self.serverSocket_udp.sendto(toSend, clientaddress)
+                            self.serverSocket_udp.settimeout(2)
+                            if self.message_type(message.decode()) == 1:
+                                self.ack_received.append(message.decode())
+                        '''
+                        Ack's Returned Goes Here.
+                        '''
+                        w_start += 1
+                        w_end = w_start + window_size
+                        # self.serverSocket_udp.settimeout(1)
+                    print(self.ack_received)
+                    print("Server: Sending Finished.")
+                else:
+                    print("Path/File is not exist")
+            else:
+                print("Wrong File name, Try Again.")
+    def message_type(self,message):
+        if message[0] == 'A' and message[1] == 'C' and message[2] == 'K':
+            return 1
+        elif message[0] == 'N' and message[1] == 'A' and message[2] == 'C' and message[2] == 'K':
+            return -1
+        else:
+            return 0
+    def com_received_sent(self,sent,received):
+        print("Compare: Let The Comparing Begin!")
+        missimg = []
+        for i in range(0,len(sent)):
+            if sent[i] != received[i]:
+                missimg.append(i)
+        print("Compare: results:")
+        if len(missimg) == 0:
+            print("Compare: chill vibes ...  All Ack's are good")
+        else:
+            print("Compare: got a Nack!")
+        return missimg
+    def receive_Acks(self):
+        time.sleep(2)
+        self.serverSocket_udp.settimeout(7)
+        try:
+            print("Thread:I'm Trying")
+            # self.serverSocket_udp.bind()
+            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+            # self.serverSocket_udp.bind(clientaddress)
+            print("Thread: Got Ack bro")
+            if message not in self.ack_received:
+                self.ack_received.append(message)
+        except:
+            print("Thread: gone to the except bro")
+        print(self.ack_received)
+        print("Thread is down")
+
+        # while len(self.ack_received) < 4:
+        #     print("Thread: Yea I'm running bro")
+        #     try:
+        #         print("Thread:I'm Trying bro!!")
+        #         message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+        #         print("Thread: Got Ack bro")
+        #         self.ack_received.append(message)
+        #     except:
+        #         print("Thread: gone to the except bro")
+        #         print(self.ack_received)
+        # print(self.ack_received)
+    # def listen(self):
+    #     while True:
+    #         print(self.serverSocket_udp.recv(4096).decode())
 
 # ThreadPool run 5 threads
     def run_server(self,addr,tcpport,udport):
@@ -135,7 +308,7 @@ class Server():
         udp_clients = []
         for _ in range(5):
             t = threading.Thread(target=server.run,args = [])
-            t1 = threading.Thread(target = server.run_udp,args = [])
+            t1 = threading.Thread(target = server.run_udp_Final,args = [])
             clients.append(t)
             udp_clients.append(t1)
         for thread in clients:

@@ -1,25 +1,28 @@
 # import socket
 from socket import *
 import time
+import pickle
+
 
 
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 1234
-        udpserverport = 1235
+        serverPort = 55002
+        udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
-        self.UDP_SERVER_ADRESS = (serverName,udpserverport)
+        self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
-        self.udpclientsocket = socket(AF_INET,SOCK_DGRAM)
+        self.udpclientsocket = socket(AF_INET, SOCK_DGRAM)
         self.clientSocket.connect(self.SERVER_ADDRESS)
-        #self.udpclientsocket.connect(self.UDP_SERVER_ADRESS)
+        # self.udpclientsocket.connect(self.UDP_SERVER_ADRESS)
         self.username = None
 
     def init_connect(self, username):
         self.clientSocket.send(username.encode())
 
-    def checksum(self,data):
+    def checksum(self, data):
+        data = str(data)
         pos = len(data)
         if (pos & 1):  # If odd...
             pos -= 1
@@ -37,47 +40,54 @@ class Client:
 
         result = (~ sum) & 0xffff  # Keep lower 16 bits
         result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
-        return chr(result / 256) + chr(result % 256)
+        return chr(int(result / 256)) + chr(result % 256)
 
     def send_message(self, message):
-        if message == 'File.txt':
-            File = open('recvFile.txt', 'w')
-            self.udpclientsocket.sendto('gimmie a file'.encode(),self.UDP_SERVER_ADRESS)
-            self.udpclientsocket.settimeout(1)
+        format = self.check_format(message)  # Checking the format of the message -> asking for file or normal message.
+        print("Format: ", format)
+        if format == 1:  # 1 is asking for file (means it ends with .txt/.png/ .jpg), 0 is normal message.
+            File = open(message, 'wb')  # Change to the message's name
+            self.udpclientsocket.sendto(message.encode(), self.UDP_SERVER_ADRESS)
+            print("Client: create connection with the server, Asking for ", message)
+            size = int(self.udpclientsocket.recv(4096).decode())
+            all_data = {}
+            print("Packets Size: ", size, "All Data Size: ", len(all_data))
+            print("...")
+            time.sleep(1)
+            # self.udpclientsocket.settimeout(10)
             while True:
-                try:
-                    data = self.udpclientsocket.recv(4096).decode()
-                    #print(data)
-                    header = data.split(';')
-                    #print(header)
-                    seq = header[0]
-                    checksum = header[1]
-                    payload = ''
-                    i=2
-                    while i < len(header):
-                        if len(header) == 3 or i == len(header)-1:
-                            payload += header[i]
-                            i+=1
-                        else:
-                            payload +=header[i]+';'
-                            i+=1
-                    print(payload)
-                    # if checksum!=self.checksum(payload):
-                    #     self.udpclientsocket.sendto(('NAK'+str(seq)).encode(),self.UDP_SERVER_ADRESS)
-                    # else:
-                    #     self.udpclientsocket.sendto(('ACK'+str(seq)).encode(), self.UDP_SERVER_ADRESS)
-                    print('1')
-                    File.write(payload)
-                    print('2')
-                except:
-                    File.close()
-                    break
-            return
-        # if self.username is None:
-        #     self.username = input('Input Username:')
-        #     self.init_connect(self.username)
+                while len(all_data) < size:
+                    try:
+                        print("Client: waiting for data from the Server")
+                        data = self.udpclientsocket.recv(4096)
+                        print('Client: Data = ',data)
+                        packet = pickle.loads(data)
+                        print("Client: Packet = ", packet)
+                        seq = packet[0]
+                        payload = packet[1]
+                        print("Client: Packet (seq num: ", seq, ") received, sending ACK ")
+                        all_data[seq] = payload
+                        self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
+                    except:
+                        File.close()
+                        break
+                    for byt in all_data.values():
+                        File.write(byt)
+                print("Finished: ", all_data)
+                return
         time.sleep(0.5)
         self.clientSocket.send(message.encode())
+
+    def check_format(self, message: str):
+        f = ''
+        i = len(message) - 1
+        while message[i] != '.' and i > 0:
+            i -= 1
+        f = message[i:]
+        if f == '.txt' or f == '.png' or f == '.jpg' or f == '.gif':
+            return 1
+        else:
+            return 0
 
     def receive_message(self):
         self.clientSocket.settimeout(0.2)

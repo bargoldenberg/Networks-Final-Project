@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 
+import kivy.uix.image
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -14,6 +15,7 @@ from kivy.clock import Clock
 import os
 import sys
 from subprocess import run
+
 
 import time
 sys.path.append(os.path.abspath(os.path.join('..')))
@@ -37,7 +39,7 @@ class login_screen(GridLayout):
         self.cols = 1
         self.size_hint = (0.6, 0.7)
         self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
-        self.add_widget(Image(source='SBC.png'))
+        self.add_widget(kivy.uix.image.Image(source='SBC.png'))
         self.addresstext = Label(text='ENTER ADDRESS', font_size=20, color='#FFD043')
         self.add_widget(self.addresstext)
         self.address = TextInput(multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
@@ -58,7 +60,8 @@ class login_screen(GridLayout):
         # return self
 
     def start(self, instance):
-        Server.run_server(None,self.address.text,int(self.tcpport.text),int(self.udpport.text))
+        # Server.run_server(None,self.address.text,int(self.tcpport.text),int(self.udpport.text))
+        Server.run_server(None,self.address.text, int(self.tcpport.text), int(self.udpport.text))
         server_app.screen_manager.current = 'log'
 
 

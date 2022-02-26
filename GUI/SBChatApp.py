@@ -39,7 +39,6 @@ class ScrollableLabel(ScrollView):
         self.chat_history.height = self.chat_history.texture_size[1]
         self.chat_history.text_size = (self.chat_history.width*0.98,None)
 
-
 class Chat(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -73,7 +72,6 @@ class Chat(GridLayout):
         self.new_message.width = new_width
 
         Clock.schedule_once(self.history.update_chat_history_layout,0.01)
-
     def on_key_down(self,instance,keyboard,keycode,text,modifiers):
         if keycode==40:
             self.send_message(None)
@@ -85,14 +83,11 @@ class Chat(GridLayout):
             #user = User()
             chat_app.user.send_message(chat_app.client, message)
         Clock.schedule_once(self.focus_text_input, 0.1)
-
     def focus_text_input(self,_):
         self.new_message.focus=True
-
     def incoming_message(self, username, message):
         print('hi')
         self.history.update_chat_history(f"[color=439bff]{username}[/color]{message}")
-
 
 class login_screen(GridLayout):
     def __init__(self, **kwargs):
@@ -120,7 +115,6 @@ class login_screen(GridLayout):
         self.username = self.user.text
         chat_app.user.run(self.username, chat_app.client)
 
-
 class SBChatApp(App):
     def build(self):
         # return login_screen()
@@ -135,11 +129,8 @@ class SBChatApp(App):
         screen = Screen(name='chat')
         screen.add_widget(self.chat_screen)
         self.screen_manager.add_widget(screen)
-
         return self.screen_manager
 
-
 if __name__ == '__main__':
-
     chat_app = SBChatApp()
     chat_app.run()
