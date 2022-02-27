@@ -8,8 +8,8 @@ import pickle
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 55001
-        udpserverport = 55002
+        serverPort = 55002
+        udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -75,8 +75,6 @@ class Client:
                         break
                 for pckt in all_data.values():
                     File.write(pckt)
-                    # for byt in all_data.values():
-                    #     File.write(byt)
                 print("Finished: ", all_data)
                 File.close()
                 return
