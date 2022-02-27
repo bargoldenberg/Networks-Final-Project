@@ -21,27 +21,6 @@ class Client:
     def init_connect(self, username):
         self.clientSocket.send(username.encode())
 
-    def checksum(self, data):
-        data = str(data)
-        pos = len(data)
-        if (pos & 1):  # If odd...
-            pos -= 1
-            sum = ord(data[pos])  # Prime the sum with the odd end byte
-        else:
-            sum = 0
-
-        # Main code: loop to calculate the checksum
-        while pos > 0:
-            pos -= 2
-            sum += (ord(data[pos + 1]) << 8) + ord(data[pos])
-
-        sum = (sum >> 16) + (sum & 0xffff)
-        sum += (sum >> 16)
-
-        result = (~ sum) & 0xffff  # Keep lower 16 bits
-        result = result >> 8 | ((result & 0xff) << 8)  # Swap bytes
-        return chr(int(result / 256)) + chr(result % 256)
-
     def send_message(self, message):
         format = self.check_format(message)  # Checking the format of the message -> asking for file or normal message.
         print("Format: ", format)
@@ -60,13 +39,10 @@ class Client:
                     try:
                         print("Client: waiting for data from the Server")
                         data = self.udpclientsocket.recv(4096)
-                        print('Client: Data = ',data)
                         packet = pickle.loads(data)
-                        print("Client: Packet = ", packet)
                         seq = packet[0]
                         payload = packet[1]
-                        print('Length after pickle',len(payload))
-                        print('payload seq: ',seq,'payload: ',payload)
+                        print('Client: seq',seq,', Payload: ',payload)
                         print("Client: Packet (seq num: ", seq, ") received, sending ACK ")
                         all_data[seq] = payload
                         self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
@@ -75,7 +51,7 @@ class Client:
                         break
                 for pckt in all_data.values():
                     File.write(pckt)
-                print("Finished: ", all_data)
+                print("Download Finished.")
                 File.close()
                 return
         time.sleep(0.5)
@@ -87,7 +63,7 @@ class Client:
         while message[i] != '.' and i > 0:
             i -= 1
         f = message[i:]
-        if f == '.txt' or f == '.png' or f == '.jpg' or f == '.gif':
+        if f == '.txt' or f == '.png' or f == '.jpg' or f == '.gif' or f == '.mp3' or f =='.mp4':
             return 1
         else:
             return 0

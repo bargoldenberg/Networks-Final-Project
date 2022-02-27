@@ -123,7 +123,7 @@ class Server():
             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
             print("messege:",message.decode())
             if self.message_type(message.decode()) == 1:
-                self.ack_received.append(message.decode())
+                print('Server: Ack reseived ->',message.decode())
             elif self.message_type(message.decode()) == 0:
                 path = "../Data/"
                 path += str(message.decode())
@@ -155,21 +155,28 @@ class Server():
                                 tmp = 'ACK'
                                 tmp += str(curr)
                                 expected_acks[curr] = tmp
-                        self.serverSocket_udp.settimeout(1)
+                        # self.serverSocket_udp.settimeout(1)
                         message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                         print('Server: new Message: ',message.decode())
                         if self.message_type(message.decode()) == 1:
-                            self.ack_received.append(message.decode())
-                            print("Ack received: ", message.decode())
-                        # todo: Add timeout for while
+                            print('Server: Ack reseived ->',message.decode())
+                            print("Ack received:", message.decode())
+                        '''
+                        While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
+                            It will resend this packet and Wont move Forward in the sending. 
+                        '''
                         while expected_acks[w_start] not in self.ack_received:
-                            print("Server: Missing Ack ",w_start, ', Resending Packet.')
+                            print("Server: Missing Ack",w_start, ', Resending Packet.')
+                            print('Server: Ack Received:',self.ack_received)
                             toSend = pickle.dumps(packets[w_start])
                             self.serverSocket_udp.sendto(toSend, clientaddress)
-                            self.serverSocket_udp.settimeout(0.1)
-                            message = self.serverSocket_udp.recvfrom(4096)
-                            if self.message_type(message.decode()) == 1:
-                                self.ack_received.append(message.decode())
+                            try:
+                                self.serverSocket_udp.settimeout(0.1)
+                                message = self.serverSocket_udp.recvfrom(4096)
+                                if self.message_type(message.decode()) == 1:
+                                    print('Server: Ack reseived (After ReSending)->',message.decode())
+                            except:
+                                print("Server: No Ack received For Packet ",w_start,"Resending Packet.")
                         '''
                         Ack's Returned Goes Here.
                         '''
@@ -184,53 +191,13 @@ class Server():
                 print("Wrong File name, Try Again.")
     def message_type(self,message):
         if message[0] == 'A' and message[1] == 'C' and message[2] == 'K':
+            if message not in self.ack_received:
+                self.ack_received.append(message)
             return 1
         elif message[0] == 'N' and message[1] == 'A' and message[2] == 'C' and message[2] == 'K':
             return -1
         else:
             return 0
-    def com_received_sent(self,sent,received):
-        print("Compare: Let The Comparing Begin!")
-        missimg = []
-        for i in range(0,len(sent)):
-            if sent[i] != received[i]:
-                missimg.append(i)
-        print("Compare: results:")
-        if len(missimg) == 0:
-            print("Compare: chill vibes ...  All Ack's are good")
-        else:
-            print("Compare: got a Nack!")
-        return missimg
-    def receive_Acks(self):
-        time.sleep(2)
-        #self.serverSocket_udp.settimeout(7)
-        try:
-            print("Thread:I'm Trying")
-            # self.serverSocket_udp.bind()
-            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-            # self.serverSocket_udp.bind(clientaddress)
-            print("Thread: Got Ack bro")
-            if message not in self.ack_received:
-                self.ack_received.append(message)
-        except:
-            print("Thread: gone to the except bro")
-        print(self.ack_received)
-        print("Thread is down")
-
-        # while len(self.ack_received) < 4:
-        #     print("Thread: Yea I'm running bro")
-        #     try:
-        #         print("Thread:I'm Trying bro!!")
-        #         message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-        #         print("Thread: Got Ack bro")
-        #         self.ack_received.append(message)
-        #     except:
-        #         print("Thread: gone to the except bro")
-        #         print(self.ack_received)
-        # print(self.ack_received)
-    # def listen(self):
-    #     while True:
-    #         print(self.serverSocket_udp.recv(4096).decode())
 
 # ThreadPool run 5 threads
     def run_server(self,addr,tcpport,udport):
@@ -243,7 +210,6 @@ class Server():
                 t1 = threading.Thread(target = server.run_udp_Final,args = [])
                 udp_clients.append(t1)
             clients.append(t)
-
         for thread in clients:
             thread.start()
         for thread in udp_clients:
