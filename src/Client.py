@@ -8,8 +8,8 @@ import pickle
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 55002
-        udpserverport = 55003
+        serverPort = 55006
+        udpserverport = 55007
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -49,9 +49,14 @@ class Client:
                     except:
                         File.close()
                         break
-                for pckt in all_data.values():
+                sorted_data = {}
+                for key in sorted(all_data):
+                    sorted_data[key]=all_data[key]
+                for pckt in sorted_data.values():
                     File.write(pckt)
                 print("Download Finished.")
+                for _ in range(10):
+                    self.udpclientsocket.sendto('Download Finished'.encode(),self.UDP_SERVER_ADRESS)
                 File.close()
                 return
         time.sleep(0.5)
@@ -79,3 +84,4 @@ class Client:
 
     def end_connection(self):
         self.clientSocket.close()
+

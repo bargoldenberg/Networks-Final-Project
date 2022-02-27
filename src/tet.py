@@ -12,7 +12,13 @@ import os.path
 
 
 if __name__ == '__main__':
-    print(int(5).to_bytes(int(math.log2(5)),byteorder='big',signed=False))
+    dict = {5:'f',3:'s',43:'a',1:'b'}
+    newdict = {}
+    for key in sorted(dict):
+        newdict[key] =dict[key]
+    print(newdict)
+
+
 
 
 
