@@ -14,16 +14,16 @@ import pickle
 
 '''
     Left to do:
-        - Send message to all users.
-        - GUI
-        - Finish all commands.
+        - Implement RDT (add timeout)
+        - add Congestion Control to window size
+        - add user list to GUI
     How it works so far:
         - When a client connects to the server he sends his name first that 
           gets appended to the connections dictionary including his connection socket.
           Then he chooses who to talk to (he himself is default),
           he sends a message to the server who sends the message through the socket to whom he wants
           to communicate with.
-          Each client is a thread in the server (we used threadpools)
+          Each client is a thread in the server 
           
 '''
 

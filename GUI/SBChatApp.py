@@ -19,8 +19,8 @@ class Files(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # self.window = GridLayout()
-        self.cols = 3
-        self.rows = 3
+        self.cols = 1
+        #self.rows = 3
         self.size_hint = (0.6, 0.7)
         self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
         self.File = Button(text='File.txt', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
@@ -105,8 +105,8 @@ class Chat(GridLayout):
         self.download.bind(on_press = self.download_screen)
         bottom_line = GridLayout(cols=3)
         bottom_line.add_widget(self.new_message)
-        bottom_line.add_widget(self.download)
         bottom_line.add_widget(self.send)
+        bottom_line.add_widget(self.download)
         self.add_widget(bottom_line)
         Window.bind(on_key_down=self.on_key_down)
         Clock.schedule_once(self.focus_text_input,1)

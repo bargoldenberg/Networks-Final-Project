@@ -28,13 +28,16 @@ class User:
             if message is None:
                 continue
             else:
-                breakdown = message.split(':')
-                name = breakdown[0]
-                if len(breakdown)>1:
-                    msg = breakdown[1]
-                    update_message(name,msg)
+                if message.startswith('{'):
+                    update_message('SERVER',message)
                 else:
-                    update_message(name,'')
+                    breakdown = message.split(':')
+                    name = breakdown[0]
+                    if len(breakdown)>1:
+                        msg = breakdown[1]
+                        update_message(name,msg)
+                    else:
+                        update_message(name,'')
 
     def send_username(self,client,username):
         self.start_connection(client,username)
