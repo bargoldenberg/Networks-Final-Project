@@ -315,11 +315,13 @@ class Server():
         server = Server(addr,tcpport,udport)
         clients = []
         udp_clients = []
-        for _ in range(1):
+        for i in range(5):
             t = threading.Thread(target=server.run,args = [])
-            t1 = threading.Thread(target = server.run_udp_Final,args = [])
+            if i == 1:
+                t1 = threading.Thread(target = server.run_udp_Final,args = [])
+                udp_clients.append(t1)
             clients.append(t)
-            udp_clients.append(t1)
+
         for thread in clients:
             thread.start()
         for thread in udp_clients:

@@ -15,6 +15,58 @@ sys.path.append(os.path.abspath(os.path.join('..')))
 from src.User import *
 from src.Client import *
 
+class Files(GridLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # self.window = GridLayout()
+        self.cols = 3
+        self.rows = 3
+        self.size_hint = (0.6, 0.7)
+        self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
+        self.File = Button(text='File.txt', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                             background_normal='', color='#00000')
+        self.File.bind(on_press=self.textfile)
+        self.add_widget(self.File)
+        self.meme1 = Button(text='meme1.jpg', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                             background_normal='', color='#00000')
+        self.meme1.bind(on_press=self.meme1dwn)
+        self.add_widget(self.meme1)
+
+        self.meme2 = Button(text='meme2.jpg', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                            background_normal='', color='#00000')
+        self.meme2.bind(on_press=self.meme2dwn)
+        self.add_widget(self.meme2)
+
+        self.rdt_b = Button(text='rdt.gif', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                            background_normal='', color='#00000')
+        self.rdt_b.bind(on_press=self.rdt)
+        self.add_widget(self.rdt_b)
+
+        self.pc = Button(text='computer.gif', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                            background_normal='', color='#00000')
+        self.pc.bind(on_press=self.computer)
+        self.add_widget(self.pc)
+
+        self.return_to_chat = Button(text='RETURN', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                            background_normal='', color='#00000')
+        self.return_to_chat.bind(on_press=self.goback)
+        self.add_widget(self.return_to_chat)
+
+    def textfile(self,instance):
+        chat_app.user.send_message(chat_app.client, 'File.txt')
+    def meme1dwn(self,instance):
+        chat_app.user.send_message(chat_app.client, 'meme1.jpg')
+    def meme2dwn(self,instance):
+        chat_app.user.send_message(chat_app.client,'meme2.jpg')
+    def rdt(self,instance):
+        chat_app.user.send_message(chat_app.client,'rdt.gif')
+    def computer(self,instance):
+        chat_app.user.send_message(chat_app.client,'computer.gif')
+    def goback(self,instance):
+        chat_app.screen_manager.current = 'chat'
+
+
+        # return self
 
 class ScrollableLabel(ScrollView):
     def __init__(self, **kwargs):
@@ -46,17 +98,24 @@ class Chat(GridLayout):
         self.rows = 2
         self.history = ScrollableLabel(height=Window.size[1] * 0.9, size_hint_y=None)
         self.add_widget(self.history)
-        self.new_message = TextInput(width=Window.size[0] * 0.8, size_hint_x=None, multiline=False)
-        self.send = Button(text='SEND', bold=True, background_color='#FFD043', background_normal='', color='#00000')
+        self.new_message = TextInput(width=Window.size[0] * 0.6, size_hint_x=None, multiline=False)
+        self.send = Button(text='SEND',size_hint=(0.3, 1), bold=True, background_color='#FFD043', background_normal='', color='#00000')
         self.send.bind(on_press=self.send_message)
-        bottom_line = GridLayout(cols=2)
+        self.download = Button( text = 'FILES',size_hint = (0.3,1), bold =True, background_color= '#FFD043', background_normal='', color = '#00000')
+        self.download.bind(on_press = self.download_screen)
+        bottom_line = GridLayout(cols=3)
         bottom_line.add_widget(self.new_message)
+        bottom_line.add_widget(self.download)
         bottom_line.add_widget(self.send)
         self.add_widget(bottom_line)
         Window.bind(on_key_down=self.on_key_down)
         Clock.schedule_once(self.focus_text_input,1)
         chat_app.user.listen(chat_app.client,self.incoming_message)
         self.bind(size = self.adjust_fields)
+
+    def download_screen(self,instance):
+        chat_app.screen_manager.current = 'download'
+
 
     def adjust_fields(self,*_):
         if Window.size[1]*0.1<50:
@@ -128,6 +187,10 @@ class SBChatApp(App):
         self.chat_screen = Chat()
         screen = Screen(name='chat')
         screen.add_widget(self.chat_screen)
+        self.screen_manager.add_widget(screen)
+        self.download_screen = Files()
+        screen = Screen(name = 'download')
+        screen.add_widget(self.download_screen)
         self.screen_manager.add_widget(screen)
         return self.screen_manager
 
