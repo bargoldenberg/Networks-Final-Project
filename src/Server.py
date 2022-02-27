@@ -132,7 +132,7 @@ class Server():
                     print("File Name: ",message.decode())
                     w_start = 0
                     sent = []
-                    expected_acks = []
+                    expected_acks = {}
                     file = open(path, 'rb')
                     data = file.read()
                     print('Data = ',data)
@@ -154,7 +154,7 @@ class Server():
                                 print("Server: Packet ", curr, " Sent")
                                 tmp = 'ACK'
                                 tmp += str(curr)
-                                expected_acks.append(tmp)
+                                expected_acks[curr] = tmp
                         self.serverSocket_udp.settimeout(1)
                         message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                         print('Server: new Message: ',message.decode())
