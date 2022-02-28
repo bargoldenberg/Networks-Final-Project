@@ -24,8 +24,7 @@ import time
           Then he chooses who to talk to (he himself is default),
           he sends a message to the server who sends the message through the socket to whom he wants
           to communicate with.
-          Each client is a thread in the server 
-          
+          Each client is a thread in the server    
 '''
 
 class Server():
@@ -42,6 +41,7 @@ class Server():
         self.serverSocket.listen(5)
         self.timeout = None
         print("The server is ready to receive clients")
+
     def connect(self,sentence,connection_socket,addr_client):
         if sentence[:9] == '<connect_' and sentence[len(sentence) - 1:len(sentence)] == '>':
             for connection in self.connections.values():
@@ -61,6 +61,7 @@ class Server():
                     sentencefrom = self.connections[addr_client].username + ': '
                     socket.send(bytes((sentencefrom+sentence[9:]).encode()))
         return FLAG
+    # Main function for the TCP connection.
     def run(self):
         connection_socket, addr_client = self.serverSocket.accept()
         while True:
@@ -105,23 +106,18 @@ class Server():
             buffer = [] ### ----> for making a bytes list
             payload = self.create_pkt(data, SEGMENTSIZE, OFFSET, size)
             print('Payload Format: ', type(payload))
-            # check_sum = self.checksum(payload).encode()
-            # print('CheckSum Format: ', type(check_sum))
-            # print('Seq: ',seq,', Byte seq: ',seq.to_bytes())
             buffer.append(seq)
-            # buffer[1]= self.checksum(payload).encode()
             buffer.append(payload)
             packets.append(buffer)
             seq+=1
             OFFSET+=SEGMENTSIZE
         return packets
-    '''
-    Test Functions For Sappir's Implementation
-    '''
+    # Main function for the TCP connection.
     def run_udp_Final(self):
-        window_size = 4
+        window_size = 2
         while True:
             self.ack_received = []
+            # ssthresh = 1000000
             print('Waiting for download request')
             self.serverSocket_udp.settimeout(None)
             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
@@ -139,73 +135,76 @@ class Server():
                     expected_acks = {}
                     file = open(path, 'rb')
                     data = file.read()
-                    print('Data = ',data)
+                    ssthresh = len(data)
+                    print('Server: Data Found.')
                     packets = self.segment_bytes(data, len(data))
-                    print("Server: Data split to packets:  -->", packets)
                     # Sending the packets size --> as String
                     self.serverSocket_udp.sendto((str(len(packets))).encode(),clientaddress)
                     while w_start < len(packets):
                         if self.timeout is None:
-                            self.serverSocket_udp.settimeout(3)
+                            self.serverSocket_udp.settimeout(5) #Try 0.3 Sec TimeOut instad of 3.
                         else:
                             self.serverSocket_udp.settimeout(self.timeout)
-                        print("w_start:", w_start , ', Length Packets:',len(packets))
+                        print("New Loop, w_start:", w_start ,', Window Size =',window_size,', SSThreshHold = ',ssthresh,'Packet Length: ',len(packets))
                         for i in range(window_size):
                             curr = i + w_start
-                            print(sent)
-                            if curr not in sent and curr <= len(packets):
+                            if curr > len(packets):
+                                break
+                            elif curr not in sent:
                                 sent.append(curr)
                                 if curr> len(packets)-1:
                                     break
-                                print('Length before pickle',len(packets[curr][1]))
-                                print('payload seq: ',packets[curr][0],'payload: ',packets[curr][1])
+                                # print('Server: Length before pickle = ',len(packets[curr][1]))
+                                print('Server: payload seq = ',packets[curr][0],'/',(len(packets)-1))
                                 toSend = pickle.dumps(packets[curr])
-                                print(len(toSend))
                                 start = time.time()
                                 self.serverSocket_udp.sendto(toSend, clientaddress)
-                                print("Server: Packet ", curr, " Sent")
+                                print("Server: Packet ", curr, " Sent. Window Start: " ,w_start)
                                 tmp = 'ACK'
                                 tmp += str(curr)
                                 expected_acks[curr] = tmp
-                        # self.serverSocket_udp.settimeout(1)
-                        try:
-                            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-                            end = time.time()
-                            self.timeout = (end - start) + 0.1
-                        except:
-                            pass
-                        finally:
-                            print('Server: new Message: ',message.decode())
-                            if self.message_type(message.decode()) == 1:
-                                print('Server: Ack reseived ->',message.decode())
-                                print("Ack received:", message.decode())
-                            '''
-                            While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
-                                It will resend this packet and Wont move Forward in the sending. 
-                            '''
-                            while expected_acks[w_start] not in self.ack_received:
-                                print("Server: Missing Ack",w_start, ', Resending Packet.')
-                                print('Server: Ack Received:',self.ack_received)
-                                toSend = pickle.dumps(packets[w_start])
-                                print('Index',w_start)
-                                self.serverSocket_udp.sendto(toSend, clientaddress)
-                                try:
-                                    message,_ = self.serverSocket_udp.recvfrom(4096)
-                                    if message.decode() == 'Download Finished':
-                                        return
-                                    print('msg',message.decode())
-                                    if self.message_type(message.decode()) == 1:
-                                        print('Server: Ack received (After ReSending)->',message.decode())
-                                except:
-                                    print("Server: No Ack received For Packet ",w_start,"Resending Packet.")
-                                    continue
-                            '''
-                            Ack's Returned Goes Here.
-                            '''
-                            w_start += 1
-                            w_end = w_start + window_size
-                            # self.serverSocket_udp.settimeout(1)
-                    print(self.ack_received)
+                        for i in range(w_start,int(window_size+w_start/2)-1):
+                            try:
+                                message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+                                end = time.time()
+                                self.timeout = (end - start) + 0.1
+                            except:
+                                pass
+                            finally:
+                                if self.message_type(message.decode()) == 1:
+                                    print('Server: Ack reseived ->',message.decode())
+                                    print("Ack received:", message.decode())
+                                '''
+                                While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
+                                    It will resend this packet and Wont move Forward in the sending. 
+                                '''
+                                while expected_acks[i] not in self.ack_received:
+                                    print("Server: Missing Ack",i, ', Resending Packet.')
+                                    # print('Server: Ack Received:',self.ack_received)
+                                    toSend = pickle.dumps(packets[i])
+                                    print('Index',i)
+                                    self.serverSocket_udp.sendto(toSend, clientaddress)
+                                    try:
+                                        message,_ = self.serverSocket_udp.recvfrom(4096)
+                                        if message.decode() == 'Download Finished':
+                                            return
+                                        print('msg',message.decode())
+                                        if self.message_type(message.decode()) == 1:
+                                            print('Server: Ack received (After ReSending)->',message.decode())
+                                            ssthresh = w_start
+                                            w_start = 2
+                                    except:
+                                        print("Server: No Ack received For Packet ",i,"Resending Packet.")
+                                        continue
+                                w_start += 1
+                            # w_start += 1
+                            if window_size*2 < ssthresh:
+                                window_size = window_size*2
+                            elif window_size+w_start < len(packets) and window_size < ssthresh:
+                                window_size += 1
+                            else:
+                                continue
+                    # print(self.ack_received)
                     print("Server: Sending Finished.")
                 else:
                     print("Path/File is not exist")

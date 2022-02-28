@@ -66,7 +66,7 @@ class Client:
                 print("Download Finished.")
                 for _ in range(10):
                     print('sending download  finished')
-                    self.udpclientsocket.sendto('Download Finished'.encode(),self.UDP_SERVER_ADRESS)
+                    self.udpclientsocket.sendto('Client_Download_Finished'.encode(),self.UDP_SERVER_ADRESS)
                 File.close()
                 return
         time.sleep(0.5)
