@@ -28,7 +28,7 @@ class Files(GridLayout):
         self.File.bind(on_press=self.textfile)
         self.add_widget(self.File)
         self.meme1 = Button(text='meme1.jpg', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
-                             background_normal='', color='#00000')
+                             background_normal='', color='#00000',padding_y = (20,20))
         self.meme1.bind(on_press=self.meme1dwn)
         self.add_widget(self.meme1)
 
@@ -47,6 +47,11 @@ class Files(GridLayout):
         self.pc.bind(on_press=self.computer)
         self.add_widget(self.pc)
 
+        self.song = Button(text='LiveAndLetDie.mp3', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
+                         background_normal='', color='#00000')
+        self.song.bind(on_press=self.dwldsong)
+        self.add_widget(self.song)
+
         self.return_to_chat = Button(text='RETURN', size_hint=(1, 0.5), bold=True, background_color='#FFD043',
                             background_normal='', color='#00000')
         self.return_to_chat.bind(on_press=self.goback)
@@ -62,6 +67,8 @@ class Files(GridLayout):
         chat_app.user.send_message(chat_app.client,'rdt.gif')
     def computer(self,instance):
         chat_app.user.send_message(chat_app.client,'computer.gif')
+    def dwldsong(self,instance):
+        chat_app.user.send_message(chat_app.client, 'LiveAndLetDie.mp3')
     def goback(self,instance):
         chat_app.screen_manager.current = 'chat'
 

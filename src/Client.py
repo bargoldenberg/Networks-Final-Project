@@ -8,8 +8,8 @@ import pickle
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 55006
-        udpserverport = 55007
+        serverPort = 55002
+        udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -24,11 +24,20 @@ class Client:
     def send_message(self, message):
         format = self.check_format(message)  # Checking the format of the message -> asking for file or normal message.
         print("Format: ", format)
+        size = None
         if format == 1:  # 1 is asking for file (means it ends with .txt/.png/ .jpg), 0 is normal message.
             File = open(message, 'wb')  # Change to the message's name
-            self.udpclientsocket.sendto(message.encode(), self.UDP_SERVER_ADRESS)
-            print("Client: create connection with the server, Asking for ", message)
-            size = int(self.udpclientsocket.recv(4096).decode())
+            while True:
+                self.udpclientsocket.settimeout(3)
+                try:
+                    self.udpclientsocket.sendto(message.encode(), self.UDP_SERVER_ADRESS)
+                    print("Client: create connection with the server, Asking for ", message)
+                    size = int(self.udpclientsocket.recv(4096).decode())
+                    if size is not None:
+                        self.udpclientsocket.settimeout(None)
+                        break
+                except:
+                    continue
             all_data = {}
             print("Packets Size: ", size, "All Data Size: ", len(all_data))
             print("...")
@@ -42,10 +51,10 @@ class Client:
                         packet = pickle.loads(data)
                         seq = packet[0]
                         payload = packet[1]
-                        print('Client: seq',seq,', Payload: ',payload)
                         print("Client: Packet (seq num: ", seq, ") received, sending ACK ")
                         all_data[seq] = payload
                         self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
+                        print('all_data length: ',len(all_data),', size: ',size)
                     except:
                         File.close()
                         break
@@ -56,6 +65,7 @@ class Client:
                     File.write(pckt)
                 print("Download Finished.")
                 for _ in range(10):
+                    print('sending download  finished')
                     self.udpclientsocket.sendto('Download Finished'.encode(),self.UDP_SERVER_ADRESS)
                 File.close()
                 return

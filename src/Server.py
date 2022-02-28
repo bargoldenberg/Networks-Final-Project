@@ -121,12 +121,10 @@ class Server():
     def run_udp_Final(self):
         window_size = 4
         while True:
-            print('hi')
+            self.ack_received = []
+            print('Waiting for download request')
             self.serverSocket_udp.settimeout(None)
-            try:
-                message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-            except:
-                continue
+            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
             print("messege:",message.decode())
             if self.message_type(message.decode()) == 1:
                 print('Server: Ack reseived ->',message.decode())
@@ -147,6 +145,10 @@ class Server():
                     # Sending the packets size --> as String
                     self.serverSocket_udp.sendto((str(len(packets))).encode(),clientaddress)
                     while w_start < len(packets):
+                        if self.timeout is None:
+                            self.serverSocket_udp.settimeout(3)
+                        else:
+                            self.serverSocket_udp.settimeout(self.timeout)
                         print("w_start:", w_start , ', Length Packets:',len(packets))
                         for i in range(window_size):
                             curr = i + w_start
@@ -159,6 +161,7 @@ class Server():
                                 print('payload seq: ',packets[curr][0],'payload: ',packets[curr][1])
                                 toSend = pickle.dumps(packets[curr])
                                 print(len(toSend))
+                                start = time.time()
                                 self.serverSocket_udp.sendto(toSend, clientaddress)
                                 print("Server: Packet ", curr, " Sent")
                                 tmp = 'ACK'
@@ -167,6 +170,8 @@ class Server():
                         # self.serverSocket_udp.settimeout(1)
                         try:
                             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+                            end = time.time()
+                            self.timeout = (end - start) + 0.1
                         except:
                             pass
                         finally:
@@ -182,23 +187,15 @@ class Server():
                                 print("Server: Missing Ack",w_start, ', Resending Packet.')
                                 print('Server: Ack Received:',self.ack_received)
                                 toSend = pickle.dumps(packets[w_start])
-                                print('Packets:',packets[w_start])
                                 print('Index',w_start)
-                                start = time.time()
                                 self.serverSocket_udp.sendto(toSend, clientaddress)
                                 try:
-                                    if self.timeout is None:
-                                        self.serverSocket_udp.settimeout(3)
-                                    else:
-                                        self.serverSocket_udp.settimeout(self.timeout)
                                     message,_ = self.serverSocket_udp.recvfrom(4096)
                                     if message.decode() == 'Download Finished':
                                         return
                                     print('msg',message.decode())
                                     if self.message_type(message.decode()) == 1:
-                                        end = time.time()
-                                        self.timeout = end-start+0.3
-                                        print('Server: Ack reseived (After ReSending)->',message.decode())
+                                        print('Server: Ack received (After ReSending)->',message.decode())
                                 except:
                                     print("Server: No Ack received For Packet ",w_start,"Resending Packet.")
                                     continue
