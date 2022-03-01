@@ -141,9 +141,11 @@ class Server():
                     ss_thresh = len(packets)
                     flag = False
                     ack_index = 0
+                    ack_exp_index = 0
+                    to_check = [0]
                     # Sending the packets size --> as String
                     self.serverSocket_udp.sendto((str(len(packets))).encode(),clientaddress)
-                    while w_start < len(packets):
+                    while w_start < len(packets) and len(to_check) > 0:
                         if self.timeout is None:
                             self.serverSocket_udp.settimeout(3)
                         else:
@@ -166,6 +168,8 @@ class Server():
                                     tmp = 'ACK'
                                     tmp += str(i)
                                     expected_acks[i] = tmp
+                                    if i not in to_check:
+                                        to_check.append(i)
                                     print("Server: expected acks += ", tmp)
                                     if i == len(packets)-1:
                                         flag = True
@@ -186,54 +190,38 @@ class Server():
                         While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
                             It will resend this packet and Wont move Forward in the sending. 
                         '''
-                        # print(self.ack_received)
-                        if expected_acks[ack_index] not in self.ack_received:
+                        if expected_acks[to_check[0]] not in self.ack_received:
+                            ack_index = to_check[0]
                             print("Server: Missing Ack",ack_index,'/',len(packets),', Resending Packet.')
+                            to_check.remove(ack_index)
                             ss_thresh = window_size
                             window_size = 2
-                            last_received = int(str(self.ack_received[0])[3])
-                            for i in range(ack_index,last_received):
-                                toSend = pickle.dumps(packets[i])
-                                print('Server: Resending ', i,'.')
-                                self.serverSocket_udp.sendto(toSend, clientaddress)
-                                tmp = 'ACK'
-                                tmp += str(i)
-                                expected_acks[i] = tmp
-                                print("Server: After Resending, expected acks += ", tmp)
-                                ack_index = last_received
+                            # last_ack = int(str(self.ack_received[0])[3])
+                            # for i in range (ack_index,last_ack):
+                            toSend = pickle.dumps(packets[ack_index])
+                            self.serverSocket_udp.sendto(toSend, clientaddress)
+                            tmp = 'ACK'
+                            tmp += str(ack_index)
+                            expected_acks[ack_index] = tmp
+                            if ack_index not in to_check:
+                                to_check.append(ack_index)
                             try:
                                 message,_ = self.serverSocket_udp.recvfrom(4096)
                                 if self.message_type(message.decode()) == 2:
                                     print("Download Finished, UDP out.")
+                                    print(to_check)
+                                    print(self.ack_received)
                                     return
-                                # print('msg',message.decode())
+                                print('msg',message.decode())
                                 if self.message_type(message.decode()) == 1:
+                                    self.ack_received.remove(expected_acks[w_start])
                                     print('Server: Ack received (After ReSending)->',message.decode())
                             except:
                                 print("Server: No Ack received For Packet ",i,"Resending Packet.")
                                 continue
                         else:
-                            ack_index += 1
-                            self.ack_received.remove(expected_acks[w_start])
-                            expected_acks.pop(w_start)
-                        # if expected_acks[w_start] not in self.ack_received:
-                        #     print("Server: Missing Ack",w_start,'/',len(packets),', Resending Packet.')
-                        #     ss_thresh = window_size
-                        #     window_size = 2
-                        #     toSend = pickle.dumps(packets[w_start])
-                        #     print('Index',w_start)
-                        #     self.serverSocket_udp.sendto(toSend, clientaddress)
-                        #     try:
-                        #         message,_ = self.serverSocket_udp.recvfrom(4096)
-                        #         if self.message_type(message.decode()) == 2:
-                        #             print("Download Finished, UDP out.")
-                        #             return
-                        #         print('msg',message.decode())
-                        #         if self.message_type(message.decode()) == 1:
-                        #             print('Server: Ack received (After ReSending)->',message.decode())
-                        #     except:
-                        #         print("Server: No Ack received For Packet ",i,"Resending Packet.")
-                        #         continue
+                            self.ack_received.remove(expected_acks[to_check[0]])
+                            to_check.remove(to_check[0])
                         w_start += 1
                         if window_size*2 < ss_thresh:
                             window_size = window_size*2
