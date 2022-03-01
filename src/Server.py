@@ -114,7 +114,7 @@ class Server():
         return packets
     # Main function for the TCP connection.
     def run_udp_Final(self):
-        window_size = 2
+        window_size = 16
         while True:
             self.ack_received = []
             last_send = 0
@@ -175,7 +175,6 @@ class Server():
                                         flag = True
                                         print("Server:", i, '=', len(packets), ', Flag Turns ', flag,', Break.')
                                         break
-
                         try:
                             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                             end = time.time()
@@ -195,7 +194,7 @@ class Server():
                             print("Server: Missing Ack",ack_index,'/',len(packets),', Resending Packet.')
                             to_check.remove(ack_index)
                             ss_thresh = window_size
-                            window_size = 2
+                            window_size = 16
                             # last_ack = int(str(self.ack_received[0])[3])
                             # for i in range (ack_index,last_ack):
                             toSend = pickle.dumps(packets[ack_index])
