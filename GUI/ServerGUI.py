@@ -42,15 +42,15 @@ class login_screen(GridLayout):
         self.add_widget(kivy.uix.image.Image(source='SBC.png'))
         self.addresstext = Label(text='ENTER ADDRESS', font_size=20, color='#FFD043')
         self.add_widget(self.addresstext)
-        self.address = TextInput(multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.address = TextInput(text='127.0.0.1',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.address)
         self.porttcptext = Label(text='ENTER TCP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.porttcptext)
-        self.tcpport = TextInput(multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.tcpport = TextInput(text='55002', multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.tcpport)
         self.portudptext = Label(text='ENTER UDP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.portudptext)
-        self.udpport = TextInput(multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.udpport = TextInput(text='55003',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.udpport)
 
         self.button = Button(text='START SERVER', size_hint=(1, 1), bold=True, background_color='#FFD043',
