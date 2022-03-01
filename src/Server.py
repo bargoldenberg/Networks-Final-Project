@@ -99,7 +99,7 @@ class Server():
     def segment_bytes(self,data:bytes,size):
         # print("Segment values:")
         packets = [] # List that contain all the packets.
-        SEGMENTSIZE = 507   # Will Be Changes.
+        SEGMENTSIZE = 60000  # Will Be Changes.
         OFFSET = 0
         seq = 0
         while OFFSET<=size:
@@ -150,7 +150,7 @@ class Server():
                             self.serverSocket_udp.settimeout(3)
                         else:
                             print("Server: Resetting timeout -> ",self.timeout)
-                            self.serverSocket_udp.settimeout(self.timeout)
+                            self.serverSocket_udp.settimeout(self.timeout+0.01)
                         print("New Loop, w_start:", w_start ,', Window Size =',window_size,', SSThreshHold = ',ss_thresh,', Packet Length: ',len(packets))
                         if not flag:
                             w_end = w_start+window_size
@@ -178,7 +178,7 @@ class Server():
                         try:
                             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                             end = time.time()
-                            self.timeout = (end - start) + 0.3
+                            self.timeout = (end - start)
                         except:
                             pass
                         finally:
@@ -189,6 +189,7 @@ class Server():
                         While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
                             It will resend this packet and Wont move Forward in the sending. 
                         '''
+
                         if expected_acks[to_check[0]] not in self.ack_received:
                             ack_index = to_check[0]
                             print("Server: Missing Ack",ack_index,'/',len(packets),', Resending Packet.')
@@ -218,9 +219,11 @@ class Server():
                             except:
                                 print("Server: No Ack received For Packet ",i,"Resending Packet.")
                                 continue
+
                         else:
                             self.ack_received.remove(expected_acks[to_check[0]])
                             to_check.remove(to_check[0])
+
                         w_start += 1
                         if window_size*2 < ss_thresh:
                             window_size = window_size*2

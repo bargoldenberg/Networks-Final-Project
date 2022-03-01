@@ -32,7 +32,7 @@ class Client:
                 try:
                     self.udpclientsocket.sendto(message.encode(), self.UDP_SERVER_ADRESS)
                     print("Client: create connection with the server, Asking for ", message)
-                    size = int(self.udpclientsocket.recv(4096).decode())
+                    size = int(self.udpclientsocket.recv(65000).decode())
                     if size is not None:
                         self.udpclientsocket.settimeout(None)
                         break
@@ -47,7 +47,7 @@ class Client:
                 while len(all_data) < size:
                     try:
                         print("Client: waiting for data from the Server")
-                        data = self.udpclientsocket.recv(4096)
+                        data = self.udpclientsocket.recv(65000)
                         packet = pickle.loads(data)
                         seq = packet[0]
                         payload = packet[1]
