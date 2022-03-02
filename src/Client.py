@@ -8,7 +8,7 @@ import pickle
 
 class Client:
     def __init__(self):
-        serverName = '127.0.0.1'
+        serverName = '10.9.12.58'
         serverPort = 55000
         udpserverport = 55001
         self.SERVER_ADDRESS = (serverName, serverPort)
