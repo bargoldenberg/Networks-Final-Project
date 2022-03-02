@@ -107,7 +107,7 @@ class Server():
     # Create Segment By Bytes
     def segment_bytes(self,data:bytes,size):
         packets = [] # List that contain all the packets.
-        SEGMENTSIZE = 507  # Will Be Changes.
+        SEGMENTSIZE = 32000  # Will Be Changes.
         OFFSET = 0
         seq = 0
         while OFFSET<=size:
@@ -164,6 +164,7 @@ class Server():
                             self.serverSocket_udp.settimeout(self.timeout+0.01)
                         print("New Loop, w_start:", w_start ,', Window Size =',window_size,', SSThreshHold = ',ss_thresh,', Packet Length: ',len(packets))
                         if not flag:
+                            print("Server: Fuck Are Life")
                             w_end = w_start+window_size
                             if w_end >len(packets):
                                 w_end = len(packets)
