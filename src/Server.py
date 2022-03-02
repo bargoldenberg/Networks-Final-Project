@@ -133,9 +133,9 @@ class Server():
                 message, clientaddress = self.serverSocket_udp.recvfrom(4096)
             except:
                 continue
-            print("messege:",message.decode())
+            print("message:",message.decode())
             if self.message_type(message.decode()) == 1:
-                print('Server: Ack reseived ->',message.decode())
+                print('Server: Ack received ->',message.decode())
             elif self.message_type(message.decode()) == 0:
                 path = "../Data/"
                 path += str(message.decode())
@@ -164,7 +164,6 @@ class Server():
                             self.serverSocket_udp.settimeout(self.timeout+0.01)
                         print("New Loop, w_start:", w_start ,', Window Size =',window_size,', SSThreshHold = ',ss_thresh,', Packet Length: ',len(packets))
                         if not flag:
-                            print("Server: Fuck Are Life")
                             w_end = w_start+window_size
                             if w_end >len(packets):
                                 w_end = len(packets)
@@ -202,7 +201,7 @@ class Server():
                             continue
                         finally:
                             if self.message_type(message.decode()) == 1:
-                                print('Server: Ack reseived ->',message.decode())
+                                print('Server: Ack received ->',message.decode())
                                 print("Ack received:", message.decode())
                             if self.message_type(message.decode()) == 2:
                                 print("Download Finished, UDP out.")
@@ -248,7 +247,6 @@ class Server():
                         else:
                             self.ack_received.remove(expected_acks[to_check[0]])
                             to_check.remove(to_check[0])
-
                         w_start += 1
                         if window_size*2 < ss_thresh:
                             window_size = window_size*2
@@ -260,6 +258,7 @@ class Server():
                         if window_size >= len(packets):
                             window_size = len(packets)
                     self.ack_received = []
+                    window_size = 16
                     print("Server: Sending Finished.")
                     # break
 
