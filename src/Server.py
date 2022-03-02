@@ -259,6 +259,7 @@ class Server():
                         if window_size >= len(packets):
                             window_size = len(packets)
                     print("Server: Sending Finished.")
+                    break
                 else:
                     print("Path/File is not exist")
             else:
