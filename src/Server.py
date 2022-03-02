@@ -193,7 +193,7 @@ class Server():
                                     if i == len(packets)-1:
                                         flag = True
                                         print("Server:", i, '=', len(packets), ', Flag Turns ', flag,', Break.')
-                                        break
+                                        # break
                         try:
                             message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                             end = time.time()
@@ -204,6 +204,9 @@ class Server():
                             if self.message_type(message.decode()) == 1:
                                 print('Server: Ack reseived ->',message.decode())
                                 print("Ack received:", message.decode())
+                            if self.message_type(message.decode()) == 2:
+                                print("Download Finished, UDP out.")
+                                break
                         '''
                         While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
                             It will resend this packet and Wont move Forward in the sending. 
@@ -233,8 +236,6 @@ class Server():
                                 message,_ = self.serverSocket_udp.recvfrom(4096)
                                 if self.message_type(message.decode()) == 2:
                                     print("Download Finished, UDP out.")
-                                    print(to_check)
-                                    print(self.ack_received)
                                     break
                                 print('msg',message.decode())
                                 if self.message_type(message.decode()) == 1:
@@ -258,8 +259,10 @@ class Server():
 
                         if window_size >= len(packets):
                             window_size = len(packets)
+                    self.ack_received = []
                     print("Server: Sending Finished.")
-                    break
+                    # break
+
                 else:
                     print("Path/File is not exist")
             else:
