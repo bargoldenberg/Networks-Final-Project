@@ -107,7 +107,7 @@ class Server():
     # Create Segment By Bytes
     def segment_bytes(self,data:bytes,size):
         packets = [] # List that contain all the packets.
-        SEGMENTSIZE = 60000  # Will Be Changes.
+        SEGMENTSIZE = 507  # Will Be Changes.
         OFFSET = 0
         seq = 0
         while OFFSET<=size:
@@ -174,7 +174,14 @@ class Server():
                                     print('Server: payload seq = ',packets[i][0],'/',(len(packets)-1))
                                     toSend = pickle.dumps(packets[i])
                                     start = time.time()
-                                    self.serverSocket_udp.sendto(toSend, clientaddress)
+                                    new_flag = True
+                                    while new_flag:
+                                        try:
+                                            print('sending . . .')
+                                            self.serverSocket_udp.sendto(toSend, clientaddress)
+                                            new_flag = False
+                                        except:
+                                            continue
                                     print("Server: Packet ", i, " Sent. Window Start: " ,w_start)
                                     tmp = 'ACK'
                                     tmp += str(i)
@@ -191,7 +198,7 @@ class Server():
                             end = time.time()
                             self.timeout = (end - start)
                         except:
-                            pass
+                            continue
                         finally:
                             if self.message_type(message.decode()) == 1:
                                 print('Server: Ack reseived ->',message.decode())
@@ -208,7 +215,14 @@ class Server():
                             ss_thresh = window_size
                             window_size = 16
                             toSend = pickle.dumps(packets[ack_index])
-                            self.serverSocket_udp.sendto(toSend, clientaddress)
+                            new_flag = True
+                            while new_flag:
+                                try:
+                                    print('sending...')
+                                    self.serverSocket_udp.sendto(toSend, clientaddress)
+                                    new_flag = False
+                                except:
+                                    continue
                             tmp = 'ACK'
                             tmp += str(ack_index)
                             expected_acks[ack_index] = tmp
