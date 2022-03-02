@@ -6,6 +6,7 @@ class User:
         self.username = ''
         self.address = ''
         self.connected_user = None
+        self.stop = False
 
     def set_user(self, username, address):
         self.username = username
@@ -24,6 +25,8 @@ class User:
 
     def receive_message(self,client,update_message):
         while True:
+            if self.stop:
+                return
             message = client.receive_message()
             if message is None:
                 continue
@@ -50,6 +53,7 @@ class User:
     def send_message(self,client,message):
         if message == '<end_connection>':
             client.end_connection()
+            self.stop = True
         client.send_message(message)
 
 

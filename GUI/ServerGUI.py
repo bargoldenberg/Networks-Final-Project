@@ -46,11 +46,11 @@ class login_screen(GridLayout):
         self.add_widget(self.address)
         self.porttcptext = Label(text='ENTER TCP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.porttcptext)
-        self.tcpport = TextInput(text='55002', multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.tcpport = TextInput(text='55000', multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.tcpport)
         self.portudptext = Label(text='ENTER UDP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.portudptext)
-        self.udpport = TextInput(text='55003',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.udpport = TextInput(text='55001',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.udpport)
 
         self.button = Button(text='START SERVER', size_hint=(1, 1), bold=True, background_color='#FFD043',

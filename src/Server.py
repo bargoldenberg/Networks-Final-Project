@@ -36,10 +36,13 @@ class Server():
         self.ack_received = []
         self.connections = {}
         self.sock = {}
+        self.clients = []
+        self.udp_clients = []
         self.serverSocket.bind(self.SERVER_ADDRESS)
         self.serverSocket_udp.bind(self.SERVER_ADDRESS_UDP)
         self.serverSocket.listen(5)
         self.timeout = None
+        self.udp_flag = False
         print("The server is ready to receive clients")
 
     def connect(self,sentence,connection_socket,addr_client):
@@ -75,6 +78,13 @@ class Server():
                 print(user.username)
             # Find to whom the message is for and send
             sentence = connection_socket.recv(4096).decode()
+            if sentence == 'kill_server':
+                for sock in self.sock.values():
+                    sock.close()
+                self.udp_flag = True
+                self.serverSocket.close()
+                self.serverSocket_udp.close()
+                break
             print('the sentence is ' + sentence)
             self.connect(sentence, connection_socket, addr_client)
             FLAG = self.msg_all(sentence,connection_socket,addr_client)
@@ -84,7 +94,6 @@ class Server():
                 if FLAG:
                     sentencefrom = self.connections[addr_client].username + ': '
                     print(sentencefrom + sentence)
-                    #connection_socket.send(bytes('Sent!\n'.encode()))
                     self.connections[addr_client].connected_user.send(bytes(sentencefrom.encode() + sentence.encode()))
     '''
     The Next five functions are Helpers for the selective repeat UDP.
@@ -97,7 +106,6 @@ class Server():
             return data[offset:offset+SEGMENTSIZE]
     # Create Segment By Bytes
     def segment_bytes(self,data:bytes,size):
-        # print("Segment values:")
         packets = [] # List that contain all the packets.
         SEGMENTSIZE = 60000  # Will Be Changes.
         OFFSET = 0
@@ -105,7 +113,6 @@ class Server():
         while OFFSET<=size:
             buffer = [] ### ----> for making a bytes list
             payload = self.create_pkt(data, SEGMENTSIZE, OFFSET, size)
-            # print('Payload Format: ', type(payload))
             buffer.append(seq)
             buffer.append(payload)
             packets.append(buffer)
@@ -118,10 +125,14 @@ class Server():
         while True:
             self.ack_received = []
             last_send = 0
-            # ssthresh = 1000000
-            # print('Waiting for download request')
-            self.serverSocket_udp.settimeout(None)
-            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+            self.serverSocket_udp.settimeout(1)
+            if self.udp_flag:
+                self.serverSocket_udp.close()
+                return
+            try:
+                message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+            except:
+                continue
             print("messege:",message.decode())
             if self.message_type(message.decode()) == 1:
                 print('Server: Ack reseived ->',message.decode())
@@ -196,8 +207,6 @@ class Server():
                             to_check.remove(ack_index)
                             ss_thresh = window_size
                             window_size = 16
-                            # last_ack = int(str(self.ack_received[0])[3])
-                            # for i in range (ack_index,last_ack):
                             toSend = pickle.dumps(packets[ack_index])
                             self.serverSocket_udp.sendto(toSend, clientaddress)
                             tmp = 'ACK'
@@ -211,7 +220,7 @@ class Server():
                                     print("Download Finished, UDP out.")
                                     print(to_check)
                                     print(self.ack_received)
-                                    return
+                                    break
                                 print('msg',message.decode())
                                 if self.message_type(message.decode()) == 1:
                                     self.ack_received.remove(expected_acks[w_start])
@@ -251,18 +260,28 @@ class Server():
         else:
             return 0
 
+    def run_one_thread(self,addr,tcpport,udport):
+        server = Server(addr,tcpport,udport)
+        t = threading.Thread(target=server.run,args = [])
+        t1 = threading.Thread(target=server.run_udp_Final,args=[])
+        server.clients.append(t)
+        server.udp_clients.append(t1)
+        for thread in server.clients:
+            thread.start()
+        for thread in server.udp_clients:
+            thread.start()
+        return server
+
 # ThreadPool run 5 threads
     def run_server(self,addr,tcpport,udport):
         server = Server(addr,tcpport,udport)
-        clients = []
-        udp_clients = []
         for i in range(5):
             t = threading.Thread(target=server.run,args = [])
             if i == 1:
                 t1 = threading.Thread(target = server.run_udp_Final,args = [])
-                udp_clients.append(t1)
-            clients.append(t)
-        for thread in clients:
+                server.udp_clients.append(t1)
+            server.clients.append(t)
+        for thread in server.clients:
             thread.start()
-        for thread in udp_clients:
+        for thread in server.udp_clients:
             thread.start()

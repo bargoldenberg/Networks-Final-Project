@@ -1,4 +1,5 @@
 # import socket
+import os
 from socket import *
 import time
 import pickle
@@ -8,8 +9,8 @@ import pickle
 class Client:
     def __init__(self):
         serverName = '127.0.0.1'
-        serverPort = 55002
-        udpserverport = 55003
+        serverPort = 55000
+        udpserverport = 55001
         self.SERVER_ADDRESS = (serverName, serverPort)
         self.UDP_SERVER_ADRESS = (serverName, udpserverport)
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -26,7 +27,7 @@ class Client:
         print("Format: ", format)
         size = None
         if format == 1:  # 1 is asking for file (means it ends with .txt/.png/ .jpg), 0 is normal message.
-            File = open(message, 'wb')  # Change to the message's name
+            File = open(os.path.abspath(os.path.join('..','Downloads',message)), 'wb')  # Change to the message's name
             while True:
                 self.udpclientsocket.settimeout(3)
                 try:
@@ -93,5 +94,6 @@ class Client:
             return
 
     def end_connection(self):
+        self.udpclientsocket.close()
         self.clientSocket.close()
 
