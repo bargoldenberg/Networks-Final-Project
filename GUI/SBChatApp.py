@@ -110,10 +110,13 @@ class Chat(GridLayout):
         self.send.bind(on_press=self.send_message)
         self.download = Button( text = 'FILES',size_hint = (0.3,1), bold =True, background_color= '#FFD043', background_normal='', color = '#00000')
         self.download.bind(on_press = self.download_screen)
-        bottom_line = GridLayout(cols=3)
+        self.exit = Button(text = 'EXIT',size_hint = (0.3,1), bold =True, background_color= '#FFD043', background_normal='', color = '#00000')
+        self.exit.bind(on_press = self.exit_gui)
+        bottom_line = GridLayout(cols=4)
         bottom_line.add_widget(self.new_message)
         bottom_line.add_widget(self.send)
         bottom_line.add_widget(self.download)
+        bottom_line.add_widget(self.exit)
         self.add_widget(bottom_line)
         Window.bind(on_key_down=self.on_key_down)
         Clock.schedule_once(self.focus_text_input,1)
@@ -122,7 +125,10 @@ class Chat(GridLayout):
 
     def download_screen(self,instance):
         chat_app.screen_manager.current = 'download'
-
+    def exit_gui(self,instance):
+        chat_app.user.send_message(chat_app.client,'<end_connection>')
+        App.get_running_app().stop()
+        
 
     def adjust_fields(self,*_):
         if Window.size[1]*0.1<50:

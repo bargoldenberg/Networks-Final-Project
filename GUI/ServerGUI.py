@@ -28,8 +28,18 @@ class Chat(GridLayout):
         super().__init__(**kwargs)
         self.cols = 1
         self.rows = 2
+        self.size_hint = (0.6, 0.7)
+        self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
         self.running = Label(text='SERVER RUNNING', font_size=90, color='#FFD043')
         self.add_widget(self.running)
+        self.end = Button(text='END SERVER', size_hint=(0.7, 0.3), bold=True, background_color='#FFD043',
+                             background_normal='', color='#00000')
+        self.end.bind(on_press=self.end_server)
+        self.add_widget(self.end)
+
+    def end_server(self,instance):
+        server_app.server.end_server()
+        App.get_running_app().stop()
 
 
 class login_screen(GridLayout):
@@ -42,7 +52,7 @@ class login_screen(GridLayout):
         self.add_widget(kivy.uix.image.Image(source='SBC.png'))
         self.addresstext = Label(text='ENTER ADDRESS', font_size=20, color='#FFD043')
         self.add_widget(self.addresstext)
-        self.address = TextInput(text='10.9.13.106',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.address = TextInput(text='127.0.0.1',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.address)
         self.porttcptext = Label(text='ENTER TCP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.porttcptext)
@@ -61,7 +71,7 @@ class login_screen(GridLayout):
 
     def start(self, instance):
         # Server.run_server(None,self.address.text,int(self.tcpport.text),int(self.udpport.text))
-        Server.run_server(None,self.address.text, int(self.tcpport.text), int(self.udpport.text))
+        server_app.server = Server.run_server(None,self.address.text, int(self.tcpport.text), int(self.udpport.text))
         server_app.screen_manager.current = 'log'
 
 
@@ -73,12 +83,11 @@ class ServerApp(App):
         screen = Screen(name='login')
         screen.add_widget(self.login_screen)
         self.screen_manager.add_widget(screen)
-        self.server = None
         self.chat_screen = Chat()
         screen = Screen(name='log')
         screen.add_widget(self.chat_screen)
         self.screen_manager.add_widget(screen)
-
+        self.server = None
         return self.screen_manager
 
 if __name__ == '__main__':

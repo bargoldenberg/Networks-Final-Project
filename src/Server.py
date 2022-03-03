@@ -42,9 +42,9 @@ class Server():
         self.serverSocket_udp.bind(self.SERVER_ADDRESS_UDP)
         self.serverSocket.listen(5)
         self.timeout = None
-        self.udp_flag = False
+        self.kill_flag = False
         print("The server is ready to receive clients")
-
+        self.proceed_flag = False
     def connect(self, sentence, connection_socket, addr_client):
         if sentence[:9] == '<connect_' and sentence[len(sentence) - 1:len(sentence)] == '>':
             for connection in self.connections.values():
@@ -68,8 +68,28 @@ class Server():
 
     # Main function for the TCP connection.
     def run(self):
-        connection_socket, addr_client = self.serverSocket.accept()
+        self.serverSocket.settimeout(0.5)
         while True:
+            if self.kill_flag:
+                print('killing')
+                for sock in self.sock.values():
+                    sock.close()
+                self.serverSocket.close()
+                self.serverSocket_udp.close()
+                return
+            try:
+                connection_socket, addr_client = self.serverSocket.accept()
+                break
+            except :
+                continue
+        while True:
+            if self.kill_flag:
+                print('killing')
+                for sock in self.sock.values():
+                    sock.close()
+                self.serverSocket.close()
+                self.serverSocket_udp.close()
+                return
             if addr_client not in self.connections.keys():
                 print("Client Address: ", addr_client)
                 user = User()
@@ -80,14 +100,14 @@ class Server():
                 print(user.username)
             # Find to whom the message is for and send
             sentence = connection_socket.recv(4096).decode()
-            if sentence == 'kill_server':
-                print('killing')
-                for sock in self.sock.values():
-                    sock.close()
-                self.udp_flag = True
-                self.serverSocket.close()
-                self.serverSocket_udp.close()
-                break
+            if sentence == '<end_connection>':
+                self.msg_all(f'<msg_all>has left the chat',connection_socket,addr_client)
+                rmv_user = self.connections[addr_client]
+                self.connections.pop(addr_client)
+                self.sock.pop(rmv_user)
+                connection_socket.close()
+                return
+
             print('the sentence is ' + sentence)
             self.connect(sentence, connection_socket, addr_client)
             FLAG = self.msg_all(sentence, connection_socket, addr_client)
@@ -134,10 +154,10 @@ class Server():
             self.ack_received = []
             last_send = 0
             self.serverSocket_udp.settimeout(1)
-            if self.udp_flag:
+            if self.kill_flag:
                 self.serverSocket_udp.close()
                 print('closed udp socket')
-                return
+                break
             try:
                 message, clientaddress = self.serverSocket_udp.recvfrom(4096)
                 print("message:", message.decode())
@@ -184,8 +204,8 @@ class Server():
                                 self.serverSocket_udp.settimeout(0.01)
                         print("New Loop, w_start:", w_start, ', Window Size =', window_size, ', SSThreshHold = ',
                               ss_thresh, ', Packet Length: ', len(packets))
-                        print(to_check)
-                        print(self.ack_received)
+                        #print(to_check)
+                        #print(self.ack_received)
                         if not flag:
                             w_end = w_start + window_size
                             if w_end > len(packets):
@@ -331,7 +351,12 @@ class Server():
         for thread in server.udp_clients:
             thread.start()
         return server
-
+    def end_server(self):
+        self.kill_flag=True
+        for thread in self.clients:
+            thread.join()
+        for thread in self.udp_clients:
+            thread.join()
     # ThreadPool run 5 threads
     def run_server(self, addr, tcpport, udport):
         server = Server(addr, tcpport, udport)
@@ -345,3 +370,4 @@ class Server():
             thread.start()
         for thread in server.udp_clients:
             thread.start()
+        return server

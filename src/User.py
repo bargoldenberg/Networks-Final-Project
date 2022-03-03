@@ -1,5 +1,7 @@
 
 import threading
+import time
+
 
 class User:
     def __init__(self):
@@ -7,6 +9,8 @@ class User:
         self.address = ''
         self.connected_user = None
         self.stop = False
+        self.t2 = None
+        self.t = None
 
     def set_user(self, username, address):
         self.username = username
@@ -26,7 +30,9 @@ class User:
     def receive_message(self,client,update_message):
         while True:
             if self.stop:
-                return
+                print('stopped')
+                break
+
             message = client.receive_message()
             if message is None:
                 continue
@@ -52,21 +58,25 @@ class User:
         # client.end_connection()
     def send_message(self,client,message):
         if message == '<end_connection>':
-            client.end_connection()
+            client.send_message(message)
             self.stop = True
+            print('joining')
+            self.t.join()
+            client.end_connection()
+            return
         client.send_message(message)
 
 
 
     def run(self,username,client):
         #t1 = threading.Thread(target=self.receive_message,args=[client,None])
-        t2 = threading.Thread(target=self.send_username,args=[client,username])
+        self.t2 = threading.Thread(target=self.send_username,args=[client,username])
         #t1.start()
-        t2.start()
-        # t1.join()
+        self.t2.start()
+        # self.t2.join()
         # t1.join()
         pass
     def listen(self,client,update_message):
-        t = threading.Thread(target = self.receive_message,args = [client,update_message])
-        t.start()
-        t.join
+        self.t = threading.Thread(target = self.receive_message,args = [client,update_message])
+        self.t.start()
+        #t.join()

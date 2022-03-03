@@ -8,7 +8,7 @@ import pickle
 
 class Client:
     def __init__(self):
-        serverName = '10.9.13.106'
+        serverName = '127.0.0.1'
         serverPort = 55002
         udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
@@ -75,6 +75,11 @@ class Client:
                     print('sending download  finished')
                     self.udpclientsocket.sendto('DWFN'.encode(),self.UDP_SERVER_ADRESS)
                 File.close()
+                File = open(os.path.abspath(os.path.join('..','Downloads',message)), 'rb')
+                data = File.read()
+                print(len(data))
+                self.send_message(f'Download Finished, Last Byte is {len(data)}')
+                File.close()
                 return
         time.sleep(0.5)
         self.clientSocket.send(message.encode())
@@ -91,13 +96,13 @@ class Client:
             return 0
 
     def receive_message(self):
-        #self.clientSocket.settimeout(0.2)
+        self.clientSocket.settimeout(0.2)
         try:
             message = self.clientSocket.recv(4096)
             if message.decode() != '':
                 return message.decode()
         except:
-            return
+            return None
 
     def end_connection(self):
         self.udpclientsocket.close()
