@@ -140,9 +140,10 @@ class Server():
                 return
             try:
                 message, clientaddress = self.serverSocket_udp.recvfrom(4096)
+                print("message:", message.decode())
+
             except:
                 continue
-            print("message:", message.decode())
             if self.message_type(message.decode()) == 1:
                 print('Server: Ack received ->', message.decode())
             elif self.message_type(message.decode()) == 0:
@@ -171,7 +172,8 @@ class Server():
                                             2. It received all of are expected Acks (len(to_check) > 0).
                                             3. It received 'Finished' message from client (message type - code 2).
                     '''
-                    while w_start < len(packets) and len(to_check) > 0:
+                    expected_acks[0] = 'ACK0'
+                    while w_start < len(packets) and len(to_check) > 0 and len(expected_acks)>0:
                         if self.timeout is None:
                             self.serverSocket_udp.settimeout(3)  # Setting Timeout For the First time.
                         else:
@@ -183,6 +185,7 @@ class Server():
                         print("New Loop, w_start:", w_start, ', Window Size =', window_size, ', SSThreshHold = ',
                               ss_thresh, ', Packet Length: ', len(packets))
                         print(to_check)
+                        print(self.ack_received)
                         if not flag:
                             w_end = w_start + window_size
                             if w_end > len(packets):
@@ -220,9 +223,9 @@ class Server():
                                     if i == len(packets)-1:
                                         flag = True
                                         print("Server:", i, '=', int(len(packets) - 1), ', Flag Turns ', flag, '.')
-                        else:
-                            print("Server: Not Flag, continue..")
-                            pass
+                        # else:
+                        #     print("Server: Not Flag, continue..")
+                        #     continue
                         try:
                             # Creating battle neck for the acks
                             message, clientaddress = self.serverSocket_udp.recvfrom(32)
@@ -276,7 +279,7 @@ class Server():
                                     message = ''
                             except:
                                 print("Server: No Ack received For Packet ", ack_index, "Resending Packet.")
-                                pass
+                                continue
 
                         else:
                             print("Server: got ack for ", to_check[0])

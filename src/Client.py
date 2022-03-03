@@ -45,6 +45,7 @@ class Client:
             time.sleep(1)
             # self.udpclientsocket.settimeout(10)
             while True:
+
                 while len(all_data) < size:
                     try:
                         print("Client: waiting for data from the Server")
