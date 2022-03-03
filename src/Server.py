@@ -227,7 +227,7 @@ class Server():
                                 end = time.time()
                                 self.timeout = (end - start)
                         except:
-                            continue
+                            pass
                         finally:
                             if self.message_type(message) == 1:
                                 print('Server: Ack received ->', message)
