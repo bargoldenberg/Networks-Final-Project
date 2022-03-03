@@ -56,8 +56,9 @@ class Client:
                         all_data[seq] = payload
                         # self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
                         # Sending ONLY Seq number as int  -->> 4 Bytes.
+                        # bytes_val = seq.to_bytes(4, 'big')
                         ack = pickle.dumps(seq)
-                        print('Ack length:', len(ack))
+                        # print('Ack length:', len(bytes_val),', Ack:', bytes_val)
                         self.udpclientsocket.sendto(ack, self.UDP_SERVER_ADRESS)
                         print('all_data length: ',len(all_data),', size: ',size)
                     except:
