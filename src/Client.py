@@ -33,7 +33,7 @@ class Client:
                 try:
                     self.udpclientsocket.sendto(message.encode(), self.UDP_SERVER_ADRESS)
                     print("Client: create connection with the server, Asking for ", message)
-                    size = int(self.udpclientsocket.recv(64000).decode())
+                    size = int(self.udpclientsocket.recv(32).decode())
                     if size is not None:
                         self.udpclientsocket.settimeout(None)
                         break
