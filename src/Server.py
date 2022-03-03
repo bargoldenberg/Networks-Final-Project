@@ -81,6 +81,7 @@ class Server():
             # Find to whom the message is for and send
             sentence = connection_socket.recv(4096).decode()
             if sentence == 'kill_server':
+                print('killing')
                 for sock in self.sock.values():
                     sock.close()
                 self.udp_flag = True
@@ -134,6 +135,7 @@ class Server():
             self.serverSocket_udp.settimeout(1)
             if self.udp_flag:
                 self.serverSocket_udp.close()
+                print('closed udp socket')
                 return
             try:
                 message, clientaddress = self.serverSocket_udp.recvfrom(4096)
