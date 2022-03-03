@@ -112,7 +112,7 @@ class Server():
     # Create Segment By Bytes
     def segment_bytes(self, data: bytes, size):
         packets = []  # List that contain all the packets.
-        SEGMENTSIZE = 32000  # Will Be Changes.
+        SEGMENTSIZE = 8192  # Will Be Changes.
         OFFSET = 0
         seq = 0
         while OFFSET <= size:
@@ -127,7 +127,7 @@ class Server():
 
     # Main function for the TCP connection.
     def run_udp_Final(self):
-        window_size = 16
+        window_size = 2
         while True:
             self.ack_received = []
             last_send = 0
@@ -156,13 +156,11 @@ class Server():
                     data = file.read()
                     print('Server: Data Found.')
                     packets = self.segment_bytes(data, len(data))
-                    ss_thresh = len(packets)  # TrashHold for linear rise of window size.
+                    ss_thresh = 1000000 #len(packets)  # TrashHold for linear rise of window size.
                     flag = False  # Flag for stop the first send (second while loop), in case we sent are last packet.
                     to_check = [0]  # List of all the packets seq number, that we need to check.
-
                     # Sending the packets size --> as String
                     self.serverSocket_udp.sendto((str(len(packets))).encode(), clientaddress)
-
                     '''
                     This is the main loop for sending the packets, 
                             it will stop only if 1. and 2. will happened  or 3. will happened:
@@ -174,8 +172,9 @@ class Server():
                         if self.timeout is None:
                             self.serverSocket_udp.settimeout(3)  # Setting Timeout For the First time.
                         else:
-                            print("Server: Resetting timeout -> ", self.timeout)
-                            self.serverSocket_udp.settimeout(self.timeout + 0.01)
+                            if not flag:
+                                print("Server: Resetting timeout -> ", self.timeout)
+                                self.serverSocket_udp.settimeout(self.timeout + 0.01)
                         print("New Loop, w_start:", w_start, ', Window Size =', window_size, ', SSThreshHold = ',
                               ss_thresh, ', Packet Length: ', len(packets))
                         if not flag:
@@ -184,11 +183,8 @@ class Server():
                                 w_end = len(packets)
                             for i in range(last_send, w_end):
                                 if i not in sent and not flag:
-
                                     # if i == int(len(packets)/2):
                                     #     self.serverSocket_udp.sendto('Server:proceed?'.encode(), clientaddress)
-
-
                                     last_send = w_start + window_size
                                     sent.append(i)
                                     print('Server: payload seq = ', packets[i][0], '/', (len(packets) - 1))
@@ -212,30 +208,32 @@ class Server():
                                     #  So for now on we will only send missing acks.
                                     if i == len(packets) - 1:
                                         flag = True
-                                        print("Server:", i, '=', len(packets), ', Flag Turns ', flag, ', Break.')
+                                        print("Server:", i, '=', int(len(packets)-1), ', Flag Turns ', flag, '.')
                         try:
-                            message, clientaddress = self.serverSocket_udp.recvfrom(4096)
-                            end = time.time()
-                            self.timeout = (end - start)
+                            message, clientaddress = self.serverSocket_udp.recvfrom(64) # Creating battle neck for the acks
+                            if not flag:
+                                end = time.time()
+                                self.timeout = (end - start)
                         except:
                             continue
                         finally:
                             if self.message_type(message.decode()) == 1:
                                 print('Server: Ack received ->', message.decode())
                                 print("Ack received:", message.decode())
-                            if self.message_type(message.decode()) == 2:
+                            elif self.message_type(message.decode()) == 2:
                                 print("Download Finished, UDP out.")
                                 break
                         '''
                         While Loop For Lost Packets, For each packet that the server has not received an Ack for (From Client)
                             It will resend this packet and Wont move Forward in the sending. 
                         '''
+                        print("Server: next expected ack to check -> ",to_check[0],',',expected_acks[to_check[0]])
                         if expected_acks[to_check[0]] not in self.ack_received:
                             ack_index = to_check[0]
                             print("Server: Missing Ack", ack_index, '/', len(packets), ', Resending Packet.')
                             to_check.remove(ack_index)
                             ss_thresh = window_size
-                            window_size = 16
+                            window_size = 4
                             toSend = pickle.dumps(packets[ack_index])
                             new_flag = True
                             while new_flag:
@@ -243,15 +241,15 @@ class Server():
                                     print('sending...')
                                     self.serverSocket_udp.sendto(toSend, clientaddress)
                                     new_flag = False
+                                    tmp = 'ACK'
+                                    tmp += str(ack_index)
+                                    expected_acks[ack_index] = tmp
+                                    if ack_index not in to_check:
+                                        to_check.append(ack_index)
                                 except:
                                     continue
-                            tmp = 'ACK'
-                            tmp += str(ack_index)
-                            expected_acks[ack_index] = tmp
-                            if ack_index not in to_check:
-                                to_check.append(ack_index)
                             try:
-                                message, _ = self.serverSocket_udp.recvfrom(4096)
+                                message, _ = self.serverSocket_udp.recvfrom(4)
                                 if self.message_type(message.decode()) == 2:
                                     print("Download Finished, UDP out.")
                                     break
@@ -259,11 +257,13 @@ class Server():
                                 if self.message_type(message.decode()) == 1:
                                     self.ack_received.remove(expected_acks[w_start])
                                     print('Server: Ack received (After ReSending)->', message.decode())
+                                    message = ''
                             except:
-                                print("Server: No Ack received For Packet ", i, "Resending Packet.")
+                                print("Server: No Ack received For Packet ",ack_index, "Resending Packet.")
                                 continue
 
                         else:
+                            print("Server: got ack for ",to_check[0])
                             self.ack_received.remove(expected_acks[to_check[0]])
                             to_check.remove(to_check[0])
                         w_start += 1

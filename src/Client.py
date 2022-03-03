@@ -8,7 +8,7 @@ import pickle
 
 class Client:
     def __init__(self):
-        serverName = '10.9.12.58'
+        serverName = '10.9.13.106'
         serverPort = 55002
         udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
@@ -48,7 +48,7 @@ class Client:
                 while len(all_data) < size:
                     try:
                         print("Client: waiting for data from the Server")
-                        data = self.udpclientsocket.recv(64000)
+                        data = self.udpclientsocket.recv(16384)
                         packet = pickle.loads(data)
                         seq = packet[0]
                         payload = packet[1]

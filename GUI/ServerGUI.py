@@ -42,7 +42,7 @@ class login_screen(GridLayout):
         self.add_widget(kivy.uix.image.Image(source='SBC.png'))
         self.addresstext = Label(text='ENTER ADDRESS', font_size=20, color='#FFD043')
         self.add_widget(self.addresstext)
-        self.address = TextInput(text='10.9.8.75',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
+        self.address = TextInput(text='10.9.13.106',multiline=False, padding_y=(20, 20), size_hint=(1, 1.2))
         self.add_widget(self.address)
         self.porttcptext = Label(text='ENTER TCP PORT', font_size=20, color='#FFD043')
         self.add_widget(self.porttcptext)
