@@ -8,7 +8,7 @@ import pickle
 
 class Client:
     def __init__(self):
-        serverName = '10.9.12.58'
+        serverName = '10.9.13.106'
         serverPort = 55002
         udpserverport = 55003
         self.SERVER_ADDRESS = (serverName, serverPort)
@@ -54,7 +54,11 @@ class Client:
                         payload = packet[1]
                         print("Client: Packet (seq num: ", seq, ") received, sending ACK ")
                         all_data[seq] = payload
-                        self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
+                        # self.udpclientsocket.sendto(('ACK' + str(seq)).encode(), self.UDP_SERVER_ADRESS)
+                        # Sending ONLY Seq number as int  -->> 4 Bytes.
+                        ack = pickle.dumps(seq)
+                        print('Ack length:', len(ack))
+                        self.udpclientsocket.sendto(ack, self.UDP_SERVER_ADRESS)
                         print('all_data length: ',len(all_data),', size: ',size)
                     except:
                         File.close()
@@ -67,7 +71,7 @@ class Client:
                 print("Download Finished.")
                 for _ in range(10):
                     print('sending download  finished')
-                    self.udpclientsocket.sendto('Download Finished'.encode(),self.UDP_SERVER_ADRESS)
+                    self.udpclientsocket.sendto('DWFN'.encode(),self.UDP_SERVER_ADRESS)
                 File.close()
                 return
         time.sleep(0.5)

@@ -202,7 +202,7 @@ class Server():
                                     print("Server: Packet ", i, " Sent. Window Start: ", w_start)
                                     tmp = 'ACK'
                                     tmp += str(i)
-                                    expected_acks[i] = tmp
+                                    expected_acks[i] = i
                                     if i not in to_check:
                                         to_check.append(i)
                                     print("Server: expected acks += ", tmp)
@@ -213,16 +213,17 @@ class Server():
                                         print("Server:", i, '=', int(len(packets)-1), ', Flag Turns ', flag, '.')
                         try:
                             message, clientaddress = self.serverSocket_udp.recvfrom(64) # Creating battle neck for the acks
+                            message = pickle.loads(message)
+                            print("Server: ---- Message = ",message)
                             if not flag:
                                 end = time.time()
                                 self.timeout = (end - start)
                         except:
                             continue
                         finally:
-                            if self.message_type(message.decode()) == 1:
-                                print('Server: Ack received ->', message.decode())
-                                print("Ack received:", message.decode())
-                            elif self.message_type(message.decode()) == 2:
+                            if self.message_type(message) == 1:
+                                print('Server: Ack received ->', message)
+                            elif self.message_type(message) == 2:
                                 print("Download Finished, UDP out.")
                                 break
                         '''
@@ -230,12 +231,12 @@ class Server():
                             It will resend this packet and Wont move Forward in the sending. 
                         '''
                         print("Server: next expected ack to check -> ",to_check[0],',',expected_acks[to_check[0]])
-                        if expected_acks[to_check[0]] not in self.ack_received:
+                        if to_check[0] not in self.ack_received:
                             ack_index = to_check[0]
                             print("Server: Missing Ack", ack_index, '/', len(packets), ', Resending Packet.')
                             to_check.remove(ack_index)
                             ss_thresh = window_size
-                            window_size = 4
+                            window_size = 2
                             toSend = pickle.dumps(packets[ack_index])
                             new_flag = True
                             while new_flag:
@@ -279,23 +280,26 @@ class Server():
                         if window_size >= len(packets):
                             window_size = len(packets)
                     self.ack_received = []
-                    window_size = 16
+                    window_size = 2
+                    ss_thresh = 2
                     print("Server: Sending Finished.")
-                    # break
-
                 else:
                     print("Path/File is not exist")
             else:
                 print("Wrong File name, Try Again.")
 
     def message_type(self, message):
-        if message[0] == 'A' and message[1] == 'C' and message[2] == 'K':
+        # if message[0] == 'A' and message[1] == 'C' and message[2] == 'K':
+        #     if message not in self.ack_received:
+        #         self.ack_received.append(message)
+        #     return 1
+        if type(message) is int:
             if message not in self.ack_received:
                 self.ack_received.append(message)
             return 1
         elif message[0] == 'N' and message[1] == 'A' and message[2] == 'C' and message[2] == 'K':
             return -1
-        elif message == 'Download Finished':
+        elif message == 'DWFN':
             return 2
         else:
             return 0
