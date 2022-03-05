@@ -26,7 +26,10 @@ class User:
 
         client.send_message(username)
         client.send_message('connected')
-
+        try:
+            client.send_message('<msg_all>has connected to the chat!')
+        except:
+            pass
     def receive_message(self,client,update_message):
         while True:
             if self.stop:
