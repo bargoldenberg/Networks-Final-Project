@@ -15,6 +15,30 @@ sys.path.append(os.path.abspath(os.path.join('..')))
 from src.User import *
 from src.Client import *
 
+
+class Help(GridLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.cols = 1
+        self.rows = 2
+        self.size_hint = (0.6, 0.7)
+        self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
+        self.running = Label(text='COMMANDS:\n'
+                                  '-connect to user for private session <connect_user>\n'
+                                  '-message all connected users <msg_all>message\n'
+                                  '-to exit click on EXIT\n'
+                                  '-to send message click on SEND or press enter\n'
+                                  '-to see files available for download click on FILES\n'
+                                  '-to download a file click on the file in FILES.', font_size=25, color='#FFD043')
+        self.add_widget(self.running)
+        self.back = Button(text='RETURN', size_hint=(0.5, 0.2), bold=True, background_color='#FFD043',
+                          background_normal='', color='#00000')
+        self.back.bind(on_press=self.go_back)
+        self.add_widget(self.back)
+
+    def go_back(self,instance):
+        chat_app.screen_manager.current = 'chat'
+
 class Files(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -105,18 +129,22 @@ class Chat(GridLayout):
         self.rows = 2
         self.history = ScrollableLabel(height=Window.size[1] * 0.9, size_hint_y=None)
         self.add_widget(self.history)
-        self.new_message = TextInput(width=Window.size[0] * 0.6, size_hint_x=None, multiline=False)
+        self.new_message = TextInput(width=Window.size[0] * 0.6, size_hint_x=1.5, multiline=False)
         self.send = Button(text='SEND',size_hint=(0.3, 1), bold=True, background_color='#FFD043', background_normal='', color='#00000')
         self.send.bind(on_press=self.send_message)
         self.download = Button( text = 'FILES',size_hint = (0.3,1), bold =True, background_color= '#FFD043', background_normal='', color = '#00000')
         self.download.bind(on_press = self.download_screen)
         self.exit = Button(text = 'EXIT',size_hint = (0.3,1), bold =True, background_color= '#FFD043', background_normal='', color = '#00000')
         self.exit.bind(on_press = self.exit_gui)
-        bottom_line = GridLayout(cols=4)
+        self.help = Button(text='?', size_hint=(0.3, 1), bold=True, background_color='#FFD043', background_normal='',
+                           color='#00000')
+        self.help.bind(on_press=self.commands)
+        bottom_line = GridLayout(cols=5)
         bottom_line.add_widget(self.new_message)
         bottom_line.add_widget(self.send)
         bottom_line.add_widget(self.download)
         bottom_line.add_widget(self.exit)
+        bottom_line.add_widget(self.help)
         self.add_widget(bottom_line)
         Window.bind(on_key_down=self.on_key_down)
         Clock.schedule_once(self.focus_text_input,1)
@@ -128,7 +156,8 @@ class Chat(GridLayout):
     def exit_gui(self,instance):
         chat_app.user.send_message(chat_app.client,'<end_connection>')
         App.get_running_app().stop()
-        
+    def commands(self,instance):
+        chat_app.screen_manager.current = 'help'
 
     def adjust_fields(self,*_):
         if Window.size[1]*0.1<50:
@@ -204,6 +233,10 @@ class SBChatApp(App):
         self.download_screen = Files()
         screen = Screen(name = 'download')
         screen.add_widget(self.download_screen)
+        self.screen_manager.add_widget(screen)
+        self.help_screen = Help()
+        screen = Screen(name = 'help')
+        screen.add_widget(self.help_screen)
         self.screen_manager.add_widget(screen)
         return self.screen_manager
 
