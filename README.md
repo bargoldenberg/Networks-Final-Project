@@ -12,10 +12,10 @@ But, for the sake of practice, We were required to meet the following tasks:
 that means that every client will have two separate Soket connections, first is TCP soket for chating and the second is reliable UDP soket for receiving files from the Server. The reliable UDP soket is achived by Implementing RDT over UDP with Congestion control. 
 
 # How to run
-## open the GUI folder from terminal.
-### to open server type in the command:
-python3 ServerGUI.py 
-### to open the client and connect type the command:
-python3 SBChatApp.py
+### Open the GUI folder from terminal.
+### To open server type in the command:
+`python3 ServerGUI.py` 
+### To open the client and connect type the command:
+`python3 SBChatApp.py`
 
 
