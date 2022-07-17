@@ -9,7 +9,7 @@ But, for the sake of practice, We were required to meet the following tasks:
 
 </br>
 
-that means that every client will have two separate Soket connections, first is TCP soket for chating and the second is reliable UDP soket for receiving files from the Server. The reliable UDP soket is achived by Implementing RDT over UDP with Congestion control. 
+that means that every client will have two separate Soket connections, first is TCP soket for chating and the second is reliable UDP soket for receiving files from the Server.</br> The reliable UDP soket is achived by Implementing RDT over UDP with Congestion control and Sliding Window Protocol. 
 
 # How to run
 ### First :
